@@ -11,7 +11,7 @@ Track implementation progress against [prd.md](./prd.md). App code lives in `orb
 | Milestone | Name | Status | Target |
 |-----------|------|--------|--------|
 | M1 | Foundation & design system | `[ ]` Not started | — |
-| M2 | Supabase local & data model | `[ ]` Not started | — |
+| M2 | Supabase local & data model | `[x]` Done | — |
 | M3 | Auth & onboarding | `[ ]` Not started | — |
 | M4 | Workspaces & boards | `[ ]` Not started | — |
 | M5 | Kanban & drag-and-drop | `[ ]` Not started | — |
@@ -41,12 +41,12 @@ Track implementation progress against [prd.md](./prd.md). App code lives in `orb
 
 **Goal:** Local Supabase running in Docker with a multi-tenant schema and typed clients.
 
-- [ ] Initialize Supabase project (`supabase init`, Docker via `supabase start`)
-- [ ] Migration: teams, workspaces, boards, columns, tasks
-- [ ] Migration: memberships (team + workspace roles)
-- [ ] Row Level Security policies for tenant isolation
-- [ ] Supabase server/client helpers in `lib/supabase/`
-- [ ] Generate TypeScript types from schema
+- [x] Initialize Supabase project (`supabase init`, Docker via `supabase start`)
+- [x] Migration: teams, workspaces, boards, columns, tasks
+- [x] Migration: memberships (team + workspace roles)
+- [x] Row Level Security policies for tenant isolation
+- [x] Supabase server/client helpers in `lib/supabase/`
+- [x] Generate TypeScript types from schema
 
 **Done when:** `supabase start` succeeds, migrations apply cleanly, types generate, RLS blocks cross-tenant access.
 
@@ -169,3 +169,4 @@ Track implementation progress against [prd.md](./prd.md). App code lives in `orb
 | Date | Milestone | Notes |
 |------|-----------|-------|
 | 2026-08-09 | — | Initial plan created from PRD |
+| 2026-08-10 | M2 | Supabase local + multi-tenant schema: teams, workspaces, boards, columns, tasks; team/workspace memberships with owner/admin/member roles; RLS via SECURITY DEFINER helpers in `private` schema; `lib/supabase/` server+browser clients; generated `database.types.ts`; `supabase db reset` clean; verified cross-tenant isolation; build + lint pass |
