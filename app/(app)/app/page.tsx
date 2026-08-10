@@ -1,5 +1,6 @@
 import { ArrowUpRight, Kanban, Plus, Sparkles } from "lucide-react"
 
+import { getFirstTeam, requireUser } from "@/lib/auth/session"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -15,16 +16,23 @@ const stats = [
   { label: "Done this week", value: "0" },
 ]
 
-export default function AppHomePage() {
+export default async function AppHomePage() {
+  const user = await requireUser()
+  const team = await getFirstTeam(user.id)
+
+  const fullName = String(user.user_metadata?.full_name ?? "").trim()
+  const firstName = fullName.split(/\s+/)[0] || "there"
+
   return (
     <div className="flex flex-1 flex-col gap-6">
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold tracking-tight">
-          Welcome to Orbit
+          Welcome, {firstName}
         </h1>
         <p className="text-sm text-muted-foreground">
-          Your team&apos;s work, all in one orbit. Create a board to get
-          started.
+          Working in{" "}
+          <span className="font-medium text-foreground">{team?.name}</span>.
+          Create a board to get started.
         </p>
       </div>
 

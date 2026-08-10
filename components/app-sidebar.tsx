@@ -9,9 +9,11 @@ import {
   Settings,
   Users,
   ChevronsUpDown,
+  UserRound,
 } from "lucide-react"
 
 import { OrbitMark } from "@/components/orbit-mark"
+import { SignOutButton } from "@/components/sign-out-button"
 import { ThemeToggle } from "@/components/theme-toggle"
 import {
   Sidebar,
@@ -35,10 +37,11 @@ const mainNav = [
 
 const workspaceNav = [
   { title: "Team", url: "/app/team", icon: Users },
+  { title: "Profile", url: "/app/profile", icon: UserRound },
   { title: "Settings", url: "/app/settings", icon: Settings },
 ]
 
-export function AppSidebar() {
+export function AppSidebar({ teamName }: { teamName: string }) {
   const pathname = usePathname()
 
   const isActive = (url: string) =>
@@ -58,8 +61,12 @@ export function AppSidebar() {
                 <OrbitMark className="size-5" />
               </div>
               <div className="flex flex-1 flex-col gap-0.5 leading-none">
-                <span className="text-sm font-semibold">Acme Studio</span>
-                <span className="text-xs text-muted-foreground">Workspace</span>
+                <span className="truncate text-sm font-semibold">
+                  {teamName}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  Workspace
+                </span>
               </div>
               <ChevronsUpDown className="size-4 text-muted-foreground" />
             </SidebarMenuButton>
@@ -113,7 +120,7 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <div className="flex items-center justify-between px-2 py-1">
-              <span className="text-xs text-muted-foreground">Theme</span>
+              <SignOutButton label="Sign out" className="h-7 px-2" />
               <ThemeToggle />
             </div>
           </SidebarMenuItem>
