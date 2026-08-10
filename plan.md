@@ -10,7 +10,7 @@ Track implementation progress against [prd.md](./prd.md). App code lives in `orb
 
 | Milestone | Name | Status | Target |
 |-----------|------|--------|--------|
-| M1 | Foundation & design system | `[ ]` Not started | — |
+| M1 | Foundation & design system | `[x]` Done | — |
 | M2 | Supabase local & data model | `[x]` Done | — |
 | M3 | Auth & onboarding | `[ ]` Not started | — |
 | M4 | Workspaces & boards | `[ ]` Not started | — |
