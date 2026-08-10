@@ -1,0 +1,2 @@
+-- Orbit — local seed data (M2: none required yet).
+-- M3+ will seed demo teams/workspaces as onboarding is implemented.
