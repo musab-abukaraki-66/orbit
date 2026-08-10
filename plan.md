@@ -12,7 +12,7 @@ Track implementation progress against [prd.md](./prd.md). App code lives in `orb
 |-----------|------|--------|--------|
 | M1 | Foundation & design system | `[x]` Done | — |
 | M2 | Supabase local & data model | `[x]` Done | — |
-| M3 | Auth & onboarding | `[ ]` Not started | — |
+| M3 | Auth & onboarding | `[x]` Done | — |
 | M4 | Workspaces & boards | `[ ]` Not started | — |
 | M5 | Kanban & drag-and-drop | `[ ]` Not started | — |
 | M6 | Team & user management | `[ ]` Not started | — |
@@ -56,12 +56,12 @@ Track implementation progress against [prd.md](./prd.md). App code lives in `orb
 
 **Goal:** Users can sign up, create a team, and land in the app.
 
-- [ ] Supabase Auth: sign up, sign in, sign out
-- [ ] Auth pages: login, signup (route group `(auth)/`)
-- [ ] Team creation onboarding (post-signup first-run)
-- [ ] Wire `proxy.ts` to protect app routes
-- [ ] Resend welcome email on signup
-- [ ] Basic user profile page
+- [x] Supabase Auth: sign up, sign in, sign out
+- [x] Auth pages: login, signup (route group `(auth)/`)
+- [x] Team creation onboarding (post-signup first-run)
+- [x] Wire `proxy.ts` to protect app routes
+- [x] Resend welcome email on signup
+- [x] Basic user profile page
 
 **Done when:** New user can register, receive welcome email, create a team, and reach the app shell.
 
@@ -170,3 +170,4 @@ Track implementation progress against [prd.md](./prd.md). App code lives in `orb
 |------|-----------|-------|
 | 2026-08-09 | — | Initial plan created from PRD |
 | 2026-08-10 | M2 | Supabase local + multi-tenant schema: teams, workspaces, boards, columns, tasks; team/workspace memberships with owner/admin/member roles; RLS via SECURITY DEFINER helpers in `private` schema; `lib/supabase/` server+browser clients; generated `database.types.ts`; `supabase db reset` clean; verified cross-tenant isolation; build + lint pass |
+| 2026-08-10 | M3 | Auth & onboarding implemented and tested: Supabase sign up/sign in/sign out, auth pages in `(auth)/` route group, team creation onboarding, `proxy.ts` route protection, Resend welcome email, basic user profile page |
