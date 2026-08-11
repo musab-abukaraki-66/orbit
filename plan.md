@@ -13,7 +13,7 @@ Track implementation progress against [prd.md](./prd.md). App code lives in `orb
 | M1 | Foundation & design system | `[x]` Done | — |
 | M2 | Supabase local & data model | `[x]` Done | — |
 | M3 | Auth & onboarding | `[x]` Done | — |
-| M4 | Workspaces & boards | `[ ]` Not started | — |
+| M4 | Workspaces & boards | `[x]` Done | — |
 | M5 | Kanban & drag-and-drop | `[ ]` Not started | — |
 | M6 | Team & user management | `[ ]` Not started | — |
 | M7 | Stripe billing | `[ ]` Not started | — |
@@ -71,12 +71,12 @@ Track implementation progress against [prd.md](./prd.md). App code lives in `orb
 
 **Goal:** Teams can organize work into workspaces and boards.
 
-- [ ] Create and list workspaces
-- [ ] Switch active workspace (picker in sidebar)
-- [ ] Create and list boards within a workspace
-- [ ] Board detail page (column shell, no DnD yet)
-- [ ] Server actions for workspace/board CRUD
-- [ ] Sidebar navigation: workspace → boards
+- [x] Create and list workspaces
+- [x] Switch active workspace (picker in sidebar)
+- [x] Create and list boards within a workspace
+- [x] Board detail page (column shell, no DnD yet)
+- [x] Server actions for workspace/board CRUD
+- [x] Sidebar navigation: workspace → boards
 
 **Done when:** User can create workspaces and boards and navigate between them.
 
@@ -171,3 +171,4 @@ Track implementation progress against [prd.md](./prd.md). App code lives in `orb
 | 2026-08-09 | — | Initial plan created from PRD |
 | 2026-08-10 | M2 | Supabase local + multi-tenant schema: teams, workspaces, boards, columns, tasks; team/workspace memberships with owner/admin/member roles; RLS via SECURITY DEFINER helpers in `private` schema; `lib/supabase/` server+browser clients; generated `database.types.ts`; `supabase db reset` clean; verified cross-tenant isolation; build + lint pass |
 | 2026-08-10 | M3 | Auth & onboarding implemented and tested: Supabase sign up/sign in/sign out, auth pages in `(auth)/` route group, team creation onboarding, `proxy.ts` route protection, Resend welcome email, basic user profile page |
+| 2026-08-11 | M4 | Workspaces & boards implemented and tested: workspace create/list/switch (cookie-based active workspace), board create/list within a workspace, board detail page with column shell, full CRUD server actions for workspaces/boards (`lib/workspaces/actions.ts`, `lib/boards/actions.ts`), sidebar workspace picker + board navigation. New shadcn `dialog` + `label` components. Verified: lint, typecheck, production build, RLS cross-tenant isolation (two users), and authenticated smoke test of `/app`, `/app/boards`, `/app/boards/[boardId]`, 404 for unknown board, active-workspace cookie round-trip |
