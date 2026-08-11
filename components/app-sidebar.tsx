@@ -8,13 +8,15 @@ import {
   Kanban,
   Settings,
   Users,
-  ChevronsUpDown,
   UserRound,
 } from "lucide-react"
 
+import type { WorkspaceContext } from "@/lib/workspaces/data"
 import { OrbitMark } from "@/components/orbit-mark"
 import { SignOutButton } from "@/components/sign-out-button"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { SidebarBoards } from "@/components/sidebar-boards"
+import { WorkspacePicker } from "@/components/workspace-picker"
 import {
   Sidebar,
   SidebarContent,
@@ -27,6 +29,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
+  SidebarSeparator,
 } from "@/components/ui/sidebar"
 
 const mainNav = [
@@ -35,13 +38,13 @@ const mainNav = [
   { title: "Boards", url: "/app/boards", icon: Kanban },
 ]
 
-const workspaceNav = [
+const accountNav = [
   { title: "Team", url: "/app/team", icon: Users },
   { title: "Profile", url: "/app/profile", icon: UserRound },
   { title: "Settings", url: "/app/settings", icon: Settings },
 ]
 
-export function AppSidebar({ teamName }: { teamName: string }) {
+export function AppSidebar({ context }: { context: WorkspaceContext }) {
   const pathname = usePathname()
 
   const isActive = (url: string) =>
@@ -62,13 +65,10 @@ export function AppSidebar({ teamName }: { teamName: string }) {
               </div>
               <div className="flex flex-1 flex-col gap-0.5 leading-none">
                 <span className="truncate text-sm font-semibold">
-                  {teamName}
+                  {context.team.name}
                 </span>
-                <span className="text-xs text-muted-foreground">
-                  Workspace
-                </span>
+                <span className="text-xs text-muted-foreground">Team</span>
               </div>
-              <ChevronsUpDown className="size-4 text-muted-foreground" />
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -96,10 +96,24 @@ export function AppSidebar({ teamName }: { teamName: string }) {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Workspace</SidebarGroupLabel>
+          <SidebarGroupContent className="flex flex-col gap-1">
+            <WorkspacePicker
+              workspaces={context.workspaces}
+              activeWorkspaceId={context.activeWorkspace?.id ?? null}
+              className="group-data-[collapsible=icon]:hidden"
+            />
+            <SidebarBoards
+              boards={context.boards}
+              workspaceId={context.activeWorkspace?.id ?? null}
+            />
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Account</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {workspaceNav.map((item) => (
+              {accountNav.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     render={<Link href={item.url} />}
@@ -125,6 +139,7 @@ export function AppSidebar({ teamName }: { teamName: string }) {
             </div>
           </SidebarMenuItem>
         </SidebarMenu>
+        <SidebarSeparator />
       </SidebarFooter>
 
       <SidebarRail />
