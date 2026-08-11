@@ -3,7 +3,7 @@ import Link from "next/link"
 import { OrbitHeroVisual } from "@/components/orbit-hero-visual"
 import { OrbitMark } from "@/components/orbit-mark"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { Button } from "@/components/ui/button"
+import { buttonVariants } from "@/components/ui/button"
 
 const features = [
   {
@@ -39,9 +39,12 @@ export default function LandingPage() {
           </Link>
           <div className="flex items-center gap-3">
             <ThemeToggle />
-            <Button render={<Link href="/app" />} size="sm">
+            <Link
+              href="/app"
+              className={buttonVariants({ size: "sm" })}
+            >
               Get started
-            </Button>
+            </Link>
           </div>
         </div>
       </header>
@@ -62,16 +65,18 @@ export default function LandingPage() {
                 workspace. Everything your team needs, moving in sync.
               </p>
               <div className="flex flex-wrap items-center gap-3">
-                <Button render={<Link href="/app" />} size="lg">
+                <Link
+                  href="/app"
+                  className={buttonVariants({ size: "lg" })}
+                >
                   Open the app
-                </Button>
-                <Button
-                  variant="outline"
-                  render={<a href="#features" />}
-                  size="lg"
+                </Link>
+                <a
+                  href="#features"
+                  className={buttonVariants({ variant: "outline", size: "lg" })}
                 >
                   See features
-                </Button>
+                </a>
               </div>
             </div>
             <OrbitHeroVisual />
