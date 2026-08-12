@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -104,9 +104,37 @@ export type Database = {
           },
         ]
       }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
           assignee_id: string | null
+          board_id: string
           column_id: string
           created_at: string
           created_by: string | null
@@ -120,6 +148,7 @@ export type Database = {
         }
         Insert: {
           assignee_id?: string | null
+          board_id: string
           column_id: string
           created_at?: string
           created_by?: string | null
@@ -133,6 +162,7 @@ export type Database = {
         }
         Update: {
           assignee_id?: string | null
+          board_id?: string
           column_id?: string
           created_at?: string
           created_by?: string | null
