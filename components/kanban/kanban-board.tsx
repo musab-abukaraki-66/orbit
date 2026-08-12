@@ -370,6 +370,7 @@ export function KanbanBoard({
       ) : null}
 
       <DndContext
+        id={boardId}
         sensors={sensors}
         collisionDetection={closestCorners}
         onDragStart={handleDragStart}
