@@ -3,6 +3,7 @@ import { Boxes, Kanban, Plus } from "lucide-react"
 
 import { requireUser } from "@/lib/auth/session"
 import { getWorkspaceContext } from "@/lib/workspaces/data"
+import { getTaskCountsByBoard } from "@/lib/tasks/data"
 import { BoardCard } from "@/components/board-card"
 import { CreateBoardDialog } from "@/components/create-board-dialog"
 import { CreateWorkspaceDialog } from "@/components/create-workspace-dialog"
@@ -16,6 +17,10 @@ export default async function BoardsPage() {
 
   const activeWorkspace = context.activeWorkspace
   const boards = context.boards
+
+  const taskCounts = await getTaskCountsByBoard(
+    boards.map((board) => board.id),
+  )
 
   return (
     <div className="flex flex-1 flex-col gap-6">
@@ -78,7 +83,11 @@ export default async function BoardsPage() {
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {boards.map((board) => (
-                <BoardCard key={board.id} board={board} />
+                <BoardCard
+                  key={board.id}
+                  board={board}
+                  taskCount={taskCounts.get(board.id) ?? 0}
+                />
               ))}
             </div>
           )}

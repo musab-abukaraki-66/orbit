@@ -14,3 +14,22 @@ export async function getTasksForBoard(boardId: string): Promise<TaskPayload[]> 
 
   return (data ?? []) as TaskPayload[]
 }
+
+export async function getTaskCountsByBoard(
+  boardIds: string[],
+): Promise<Map<string, number>> {
+  if (boardIds.length === 0) return new Map()
+
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from("tasks")
+    .select("board_id")
+    .in("board_id", boardIds)
+
+  const counts = new Map<string, number>()
+  for (const task of data ?? []) {
+    counts.set(task.board_id, (counts.get(task.board_id) ?? 0) + 1)
+  }
+
+  return counts
+}
