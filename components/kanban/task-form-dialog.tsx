@@ -79,6 +79,10 @@ export function TaskFormDialog({
   const [assigneeId, setAssigneeId] = React.useState<string | null>(
     task?.assignee_id ?? null,
   )
+  const [title, setTitle] = React.useState<string>(task?.title ?? "")
+  const [description, setDescription] = React.useState<string>(
+    task?.description ?? "",
+  )
 
   // Reset the picker fields each time the dialog opens for a different task
   // (render-phase state adjustment, so no effect cascade is needed).
@@ -89,6 +93,8 @@ export function TaskFormDialog({
     if (dialogKey) {
       setPriority(task?.priority ?? DEFAULT_PRIORITY)
       setAssigneeId(task?.assignee_id ?? null)
+      setTitle(task?.title ?? "")
+      setDescription(task?.description ?? "")
     }
   }
 
@@ -131,7 +137,8 @@ export function TaskFormDialog({
               id="task-title"
               name="title"
               placeholder="e.g. Ship the onboarding flow"
-              defaultValue={task?.title ?? ""}
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
               autoFocus
               required
               maxLength={200}
@@ -144,7 +151,8 @@ export function TaskFormDialog({
               id="task-description"
               name="description"
               placeholder="Add more context for your team…"
-              defaultValue={task?.description ?? ""}
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
               rows={4}
             />
           </div>
