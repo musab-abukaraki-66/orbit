@@ -14,7 +14,7 @@ Track implementation progress against [prd.md](./prd.md). App code lives in `orb
 | M2 | Supabase local & data model | `[x]` Done | — |
 | M3 | Auth & onboarding | `[x]` Done | — |
 | M4 | Workspaces & boards | `[x]` Done | — |
-| M5 | Kanban & drag-and-drop | `[ ]` Not started | — |
+| M5 | Kanban & drag-and-drop | `[x]` Done | — |
 | M6 | Team & user management | `[ ]` Not started | — |
 | M7 | Stripe billing | `[ ]` Not started | — |
 | M8 | AI features | `[ ]` Not started | — |
@@ -86,12 +86,12 @@ Track implementation progress against [prd.md](./prd.md). App code lives in `orb
 
 **Goal:** Full Kanban board experience with live updates.
 
-- [ ] Column model (status lanes) seeded per board
-- [ ] Task cards: title, description, assignee, priority, status
-- [ ] Task CRUD server actions
-- [ ] Drag-and-drop: reorder within column, move across columns
-- [ ] Supabase Realtime subscriptions for board changes
-- [ ] Keyboard-accessible DnD fallbacks
+- [x] Column model (status lanes) seeded per board
+- [x] Task cards: title, description, assignee, priority, status
+- [x] Task CRUD server actions
+- [x] Drag-and-drop: reorder within column, move across columns
+- [x] Supabase Realtime subscriptions for board changes
+- [x] Keyboard-accessible DnD fallbacks
 
 **Done when:** Two clients see the same board update in real time; tasks move smoothly via drag-and-drop.
 
@@ -172,3 +172,4 @@ Track implementation progress against [prd.md](./prd.md). App code lives in `orb
 | 2026-08-10 | M2 | Supabase local + multi-tenant schema: teams, workspaces, boards, columns, tasks; team/workspace memberships with owner/admin/member roles; RLS via SECURITY DEFINER helpers in `private` schema; `lib/supabase/` server+browser clients; generated `database.types.ts`; `supabase db reset` clean; verified cross-tenant isolation; build + lint pass |
 | 2026-08-10 | M3 | Auth & onboarding implemented and tested: Supabase sign up/sign in/sign out, auth pages in `(auth)/` route group, team creation onboarding, `proxy.ts` route protection, Resend welcome email, basic user profile page |
 | 2026-08-11 | M4 | Workspaces & boards implemented and tested: workspace create/list/switch (cookie-based active workspace), board create/list within a workspace, board detail page with column shell, full CRUD server actions for workspaces/boards (`lib/workspaces/actions.ts`, `lib/boards/actions.ts`), sidebar workspace picker + board navigation. New shadcn `dialog` + `label` components. Verified: lint, typecheck, production build, RLS cross-tenant isolation (two users), and authenticated smoke test of `/app`, `/app/boards`, `/app/boards/[boardId]`, 404 for unknown board, active-workspace cookie round-trip |
+| 2026-08-12 | M5 | Kanban implemented and tested: M5 migration (`20260812120000_m5_kanban.sql`) adds `tasks.board_id`, fractional double-precision `position`, status derived from column via sync trigger, default Backlog/Todo/In Progress/Done lanes seeded per board (trigger + backfill), public `profiles` mirror with RLS, `tasks` added to realtime publication, `replica identity full` so DELETE events are filterable. dnd-kit drag-and-drop with midpoint positioning + reindex fallback, keyboard-accessible DnD, task CRUD + move server actions (`lib/tasks/actions.ts`), board realtime subscription in `components/kanban/kanban-board.tsx`. New shadcn `textarea`. Verified: `scripts/verify-m5.mjs` 46/46 (column seeding, task CRUD, ordering persistence, profiles, cross-tenant isolation, Realtime INSERT/UPDATE/DELETE delivery + RLS, HTTP smoke), plus M4 33/33, typecheck, lint, production build |
