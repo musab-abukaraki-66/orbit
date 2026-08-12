@@ -1,3 +1,5 @@
+import { memo } from "react"
+
 import type { ProfilePayload, TaskPayload } from "@/lib/tasks/types"
 import { getPriorityMeta } from "@/components/kanban/priority"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -15,7 +17,7 @@ function getInitials(name: string | null): string {
   return result || "?"
 }
 
-export function TaskCard({
+export const TaskCard = memo(function TaskCard({
   task,
   profile,
   actions,
@@ -71,4 +73,4 @@ export function TaskCard({
       </div>
     </div>
   )
-}
+})

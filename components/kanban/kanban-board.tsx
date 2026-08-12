@@ -39,6 +39,19 @@ function byPosition(a: TaskPayload, b: TaskPayload): number {
   return a.id < b.id ? -1 : 1
 }
 
+function isSameTask(a: TaskPayload, b: TaskPayload): boolean {
+  return (
+    a.column_id === b.column_id &&
+    a.position === b.position &&
+    a.title === b.title &&
+    a.description === b.description &&
+    a.priority === b.priority &&
+    a.status === b.status &&
+    a.assignee_id === b.assignee_id &&
+    a.updated_at === b.updated_at
+  )
+}
+
 export function KanbanBoard({
   boardId,
   columns,
@@ -141,6 +154,29 @@ export function KanbanBoard({
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
+
+  const tasksByColumn = React.useMemo(() => {
+    const map = new Map<string, TaskPayload[]>()
+    for (const column of columns) {
+      map.set(
+        column.id,
+        tasks.filter((task) => task.column_id === column.id).sort(byPosition),
+      )
+    }
+    return map
+  }, [columns, tasks])
+
+  const handleAddTask = React.useCallback((columnId: string) => {
+    setDialog({ mode: "create", columnId })
+  }, [])
+
+  const handleEditTask = React.useCallback((task: TaskPayload) => {
+    setDialog({ mode: "edit", task })
+  }, [])
+
+  const handleDeleteTask = React.useCallback((taskId: string) => {
+    setTasks((prev) => prev.filter((task) => task.id !== taskId))
+  }, [])
 
   function restoreSnapshot() {
     if (snapshotRef.current) setTasks(snapshotRef.current)
@@ -251,7 +287,11 @@ export function KanbanBoard({
           }
           const row = payload.new as TaskPayload | null
           if (row) {
-            setTasks((prev) => upsertTask(prev, row))
+            setTasks((prev) => {
+              const existing = prev.find((task) => task.id === row.id)
+              if (existing && isSameTask(existing, row)) return prev
+              return upsertTask(prev, row)
+            })
             if (
               row.assignee_id &&
               !profilesByIdRef.current.has(row.assignee_id)
@@ -342,15 +382,11 @@ export function KanbanBoard({
             <BoardColumn
               key={column.id}
               column={column}
-              tasks={sortedTasksInColumn(column.id)}
+              tasks={tasksByColumn.get(column.id) ?? []}
               profilesById={profilesById}
-              onAddTask={(columnId) =>
-                setDialog({ mode: "create", columnId })
-              }
-              onEditTask={(task) => setDialog({ mode: "edit", task })}
-              onDeleteTask={(taskId) =>
-                setTasks((prev) => prev.filter((task) => task.id !== taskId))
-              }
+              onAddTask={handleAddTask}
+              onEditTask={handleEditTask}
+              onDeleteTask={handleDeleteTask}
             />
           ))}
         </div>
