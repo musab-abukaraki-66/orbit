@@ -1,5 +1,7 @@
 "use client"
 
+import { memo } from "react"
+
 import { useDroppable } from "@dnd-kit/core"
 import {
   SortableContext,
@@ -17,7 +19,7 @@ import { SortableTaskCard } from "@/components/kanban/sortable-task-card"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
-export function BoardColumn({
+export const BoardColumn = memo(function BoardColumn({
   column,
   tasks,
   profilesById,
@@ -90,4 +92,4 @@ export function BoardColumn({
       </div>
     </div>
   )
-}
+})

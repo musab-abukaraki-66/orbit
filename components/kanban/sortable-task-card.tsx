@@ -1,5 +1,7 @@
 "use client"
 
+import { memo } from "react"
+
 import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 
@@ -8,7 +10,7 @@ import { TaskCard } from "@/components/kanban/task-card"
 import { TaskActionsMenu } from "@/components/kanban/task-actions-menu"
 import { cn } from "@/lib/utils"
 
-export function SortableTaskCard({
+export const SortableTaskCard = memo(function SortableTaskCard({
   task,
   profile,
   isActive,
@@ -60,4 +62,4 @@ export function SortableTaskCard({
       />
     </div>
   )
-}
+})
