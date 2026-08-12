@@ -4,7 +4,7 @@
 
 **Orbit** is a team project-management app inspired by Linear. Teams collaborate on tasks across workspaces and Kanban boards. The product spec lives at [`../prd.md`](../prd.md) (repo root, one level above this directory).
 
-**Current state:** Early scaffold (`create-next-app` boilerplate). Most PRD features are not built yet. All application code and config live in this directory (the directory containing `package.json`).
+**Current state:** Milestones M1–M5 (foundation & design system, Supabase data model, auth & onboarding, workspaces & boards, Kanban & drag-and-drop) are complete. M6 (team & user management) is next up (not yet started); M7–M9 are not started. See [`plan.md`](./plan.md) for the live status — it is the source of truth. All application code and config live in this directory (the directory containing `package.json`).
 
 ## Product scope (from PRD)
 

@@ -26,12 +26,12 @@ Track implementation progress against [prd.md](./prd.md). App code lives in `orb
 
 **Goal:** Usable app shell with Orbit branding, theming, and route protection scaffolding.
 
-- [ ] Install and configure shadcn/ui on Tailwind v4
-- [ ] App shell: sidebar, header, main content area
-- [ ] Dark mode default with light/dark toggle (class-based)
-- [ ] Replace create-next-app boilerplate with Orbit landing/home
-- [ ] Add `proxy.ts` for auth guards and redirects (Next.js 16)
-- [ ] Add `.env.local.example` with placeholder keys
+- [x] Install and configure shadcn/ui on Tailwind v4
+- [x] App shell: sidebar, header, main content area
+- [x] Dark mode default with light/dark toggle (class-based)
+- [x] Replace create-next-app boilerplate with Orbit landing/home
+- [x] Add `proxy.ts` for auth guards and redirects (Next.js 16)
+- [x] Add `.env.local.example` with placeholder keys
 
 **Done when:** App loads with Orbit UI shell, theme toggle works, proxy.ts stub redirects unauthenticated routes.
 
