@@ -7,6 +7,7 @@ import {
   getWorkspaceContext,
 } from "@/lib/workspaces/data"
 import { BoardCard } from "@/components/board-card"
+import { getTaskCountsByBoard } from "@/lib/tasks/data"
 import { CreateBoardDialog } from "@/components/create-board-dialog"
 import { CreateWorkspaceDialog } from "@/components/create-workspace-dialog"
 import { WorkspaceMenu } from "@/components/workspace-menu"
@@ -29,6 +30,9 @@ export default async function AppHomePage() {
 
   const memberCount = team ? await getTeamMemberCount(team.id) : 0
   const boardCounts = team ? await getBoardCountsByWorkspace(team.id) : new Map()
+  const taskCounts = await getTaskCountsByBoard(
+    boards.map((board) => board.id),
+  )
 
   const fullName = String(user.user_metadata?.full_name ?? "").trim()
   const firstName = fullName.split(/\s+/)[0] || "there"
@@ -148,7 +152,11 @@ export default async function AppHomePage() {
             ) : (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {boards.map((board) => (
-                  <BoardCard key={board.id} board={board} />
+                  <BoardCard
+                    key={board.id}
+                    board={board}
+                    taskCount={taskCounts.get(board.id) ?? 0}
+                  />
                 ))}
               </div>
             )}
