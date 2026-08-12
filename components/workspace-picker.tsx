@@ -10,6 +10,7 @@ import { CreateWorkspaceDialog } from "@/components/create-workspace-dialog"
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -64,7 +65,9 @@ export function WorkspacePicker({
           <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="min-w-56">
-          <DropdownMenuLabel>Workspaces</DropdownMenuLabel>
+          <DropdownMenuGroup>
+            <DropdownMenuLabel>Workspaces</DropdownMenuLabel>
+          </DropdownMenuGroup>
           {workspaces.length > 0 ? (
             workspaces.map((workspace) => (
               <DropdownMenuItem
