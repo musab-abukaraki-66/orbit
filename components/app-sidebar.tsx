@@ -133,8 +133,11 @@ export function AppSidebar({ context }: { context: WorkspaceContext }) {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <div className="flex items-center justify-between px-2 py-1">
-              <SignOutButton label="Sign out" className="h-7 px-2" />
+            <div className="flex items-center justify-between px-2 py-1 group-data-[collapsible=icon]:flex-col group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-1 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:py-2">
+              <SignOutButton
+                label="Sign out"
+                className="h-7 px-2 group-data-[collapsible=icon]:px-0"
+              />
               <ThemeToggle />
             </div>
           </SidebarMenuItem>
