@@ -22,7 +22,7 @@ export function SignOutButton({
         aria-label="Sign out"
       >
         <LogOut />
-        {label}
+        <span className="group-data-[collapsible=icon]:hidden">{label}</span>
       </Button>
     </form>
   )
