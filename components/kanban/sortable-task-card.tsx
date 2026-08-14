@@ -5,7 +5,11 @@ import { memo } from "react"
 import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 
-import type { ProfilePayload, TaskPayload } from "@/lib/tasks/types"
+import type {
+  LabelPayload,
+  ProfilePayload,
+  TaskPayload,
+} from "@/lib/tasks/types"
 import { TaskCard } from "@/components/kanban/task-card"
 import { TaskActionsMenu } from "@/components/kanban/task-actions-menu"
 import { cn } from "@/lib/utils"
@@ -13,12 +17,14 @@ import { cn } from "@/lib/utils"
 export const SortableTaskCard = memo(function SortableTaskCard({
   task,
   profile,
+  labels,
   isActive,
   onEdit,
   onDeleted,
 }: {
   task: TaskPayload
   profile: ProfilePayload | null
+  labels?: LabelPayload[]
   isActive?: boolean
   onEdit: () => void
   onDeleted: () => void
@@ -50,6 +56,7 @@ export const SortableTaskCard = memo(function SortableTaskCard({
       <TaskCard
         task={task}
         profile={profile}
+        labels={labels}
         className={cn(isActive && "ring-1 ring-ring/40 shadow-md")}
         actions={
           <TaskActionsMenu

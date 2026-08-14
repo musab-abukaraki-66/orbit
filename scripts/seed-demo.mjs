@@ -260,11 +260,103 @@ async function main() {
       priority: t.priority,
       position: t.position,
       assignee_id: t.assigned ? demoUserId : null,
+      due_date: t.due ?? null,
     })
     if (error) throw new Error(`insert task "${t.title}": ${error.message}`)
     inserted += 1
   }
   console.log(`  Inserted ${inserted} tasks across ${columns.length} columns.`)
+
+  section("7. Labels + due dates (demo enrichment)")
+  const LABELS = [
+    { name: "Design", color: "violet" },
+    { name: "Frontend", color: "sky" },
+    { name: "Backend", color: "teal" },
+    { name: "Bug", color: "rose" },
+    { name: "Research", color: "amber" },
+    { name: "Blocked", color: "slate" },
+  ]
+  const labelByName = new Map()
+  for (const spec of LABELS) {
+    const { data: existing } = await anon
+      .from("labels")
+      .select("id, name")
+      .eq("team_id", team.id)
+      .ilike("name", spec.name)
+      .maybeSingle()
+    if (existing) {
+      labelByName.set(spec.name, existing)
+      continue
+    }
+    const { data, error } = await anon
+      .from("labels")
+      .insert({ team_id: team.id, name: spec.name, color: spec.color })
+      .select("id, name")
+      .single()
+    if (error) {
+      const { data: retry } = await anon
+        .from("labels")
+        .select("id, name")
+        .eq("team_id", team.id)
+        .ilike("name", spec.name)
+        .maybeSingle()
+      if (retry) labelByName.set(spec.name, retry)
+      else throw new Error(`create label "${spec.name}": ${error.message}`)
+    } else {
+      labelByName.set(spec.name, data)
+    }
+  }
+  const LABEL_LINKS = [
+    ["Drag-and-drop between columns", "Frontend"],
+    ["Drag-and-drop between columns", "Backend"],
+    ["Task edit dialog", "Frontend"],
+    ["Task edit dialog", "Design"],
+    ["Supabase Realtime board subscription", "Backend"],
+    ["Collect drag-and-drop feedback", "Research"],
+    ["Research competitor onboarding flows", "Research"],
+    ["Keyboard-accessible DnD fallback", "Frontend"],
+    ["Keyboard shortcuts for board navigation", "Design"],
+    ["Keyboard shortcuts for board navigation", "Frontend"],
+  ]
+  const { data: demoTasks } = await anon
+    .from("tasks")
+    .select("id, title")
+    .eq("board_id", board.id)
+  const taskByTitle = new Map((demoTasks ?? []).map((t) => [t.title, t.id]))
+  let attached = 0
+  for (const [title, labelName] of LABEL_LINKS) {
+    const taskId = taskByTitle.get(title)
+    const label = labelByName.get(labelName)
+    if (!taskId || !label) continue
+    const { error } = await anon
+      .from("task_labels")
+      .upsert(
+        { task_id: taskId, label_id: label.id },
+        { onConflict: "task_id,label_id", ignoreDuplicates: true },
+      )
+    if (error) throw new Error(`link "${title}" -> "${labelName}": ${error.message}`)
+    attached += 1
+  }
+  console.log(`  Attached ${attached} label link(s) to demo tasks.`)
+
+  const DUE_DATES = [
+    ["Drag-and-drop between columns", "2026-08-20"],
+    ["Task edit dialog", "2026-08-18"],
+    ["Persist theme choice", "2026-08-17"],
+    ["Draft PRD for M7 billing tiers", "2026-08-28"],
+  ]
+  let dated = 0
+  for (const [title, due] of DUE_DATES) {
+    const taskId = taskByTitle.get(title)
+    if (!taskId) continue
+    const { error } = await anon
+      .from("tasks")
+      .update({ due_date: due })
+      .eq("id", taskId)
+    if (error) throw new Error(`set due date "${title}": ${error.message}`)
+    dated += 1
+  }
+  console.log(`  Set ${dated} due date(s).`)
 
   section("Done")
   console.log(`  Board:    ${env.app}/app/boards/${board.id}`)

@@ -11,10 +11,26 @@ export type TaskPayload = {
   status: string
   position: number
   assignee_id: string | null
+  due_date: string | null
   created_by: string | null
   created_at: string
   updated_at: string
 }
+
+export type LabelPayload = {
+  id: string
+  team_id: string
+  name: string
+  color: string
+}
+
+export type TaskLabelLink = {
+  task_id: string
+  label_id: string
+}
+
+// Map a task id -> the label ids attached to it. Sorted by label name.
+export type TaskLabelIdsByTask = Record<string, string[]>
 
 export type ColumnPayload = {
   id: string
