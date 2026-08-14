@@ -5,7 +5,7 @@ import { ArrowLeft, Columns3 } from "lucide-react"
 
 import { requireUser } from "@/lib/auth/session"
 import { getBoardById, getColumnsForBoard } from "@/lib/boards/data"
-import { getTasksForBoard } from "@/lib/tasks/data"
+import { getBoardLabels, getTasksForBoard } from "@/lib/tasks/data"
 import { getWorkspaceById } from "@/lib/workspaces/data"
 import { getVisibleProfiles } from "@/lib/users/data"
 import { BoardMenu } from "@/components/board-menu"
@@ -34,6 +34,7 @@ export default async function BoardPage({ params }: BoardPageProps) {
   const columns = await getColumnsForBoard(boardId)
   const tasks = await getTasksForBoard(boardId)
   const profiles = await getVisibleProfiles()
+  const boardLabels = await getBoardLabels(boardId)
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col gap-4">
@@ -83,6 +84,8 @@ export default async function BoardPage({ params }: BoardPageProps) {
           columns={columns}
           initialTasks={tasks}
           initialProfiles={profiles}
+          initialLabels={boardLabels.labels}
+          initialTaskLabels={boardLabels.byTask}
         />
       )}
     </div>

@@ -131,6 +131,74 @@ export type Database = {
         }
         Relationships: []
       }
+      labels: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          name: string
+          team_id: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          id?: string
+          name: string
+          team_id: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          name?: string
+          team_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "labels_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_labels: {
+        Row: {
+          created_at: string
+          label_id: string
+          task_id: string
+        }
+        Insert: {
+          created_at?: string
+          label_id: string
+          task_id: string
+        }
+        Update: {
+          created_at?: string
+          label_id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_labels_label_id_fkey"
+            columns: ["label_id"]
+            isOneToOne: false
+            referencedRelation: "labels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_labels_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           assignee_id: string | null
@@ -139,6 +207,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           description: string | null
+          due_date: string | null
           id: string
           position: number
           priority: string
@@ -153,6 +222,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          due_date?: string | null
           id?: string
           position?: number
           priority?: string
@@ -167,6 +237,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          due_date?: string | null
           id?: string
           position?: number
           priority?: string

@@ -11,6 +11,7 @@ import { Plus } from "lucide-react"
 
 import type {
   ColumnPayload,
+  LabelPayload,
   ProfilePayload,
   TaskPayload,
 } from "@/lib/tasks/types"
@@ -23,6 +24,7 @@ export const BoardColumn = memo(function BoardColumn({
   column,
   tasks,
   profilesById,
+  labelsByTask,
   onAddTask,
   onEditTask,
   onDeleteTask,
@@ -30,6 +32,7 @@ export const BoardColumn = memo(function BoardColumn({
   column: ColumnPayload
   tasks: TaskPayload[]
   profilesById: Map<string, ProfilePayload>
+  labelsByTask: ReadonlyMap<string, LabelPayload[]>
   onAddTask: (columnId: string) => void
   onEditTask: (task: TaskPayload) => void
   onDeleteTask: (taskId: string) => void
@@ -70,6 +73,7 @@ export const BoardColumn = memo(function BoardColumn({
                 key={task.id}
                 task={task}
                 profile={profilesById.get(task.assignee_id ?? "") ?? null}
+                labels={labelsByTask.get(task.id)}
                 onEdit={() => onEditTask(task)}
                 onDeleted={() => onDeleteTask(task.id)}
               />
