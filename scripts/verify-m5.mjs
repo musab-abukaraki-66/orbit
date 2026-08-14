@@ -5,6 +5,30 @@
 import { createClient } from "@supabase/supabase-js"
 import { createServerClient } from "@supabase/ssr"
 import { randomUUID } from "node:crypto"
+import { existsSync, readFileSync } from "node:fs"
+import { dirname, join } from "node:path"
+import { fileURLToPath } from "node:url"
+
+const ROOT = dirname(dirname(fileURLToPath(import.meta.url)))
+
+function loadEnvFile() {
+  const path = join(ROOT, ".env.local")
+  if (!existsSync(path)) return
+  for (const line of readFileSync(path, "utf8").split(/\r?\n/)) {
+    const m = line.match(/^\s*([A-Za-z0-9_]+)\s*=\s*(.*)\s*$/)
+    if (!m) continue
+    const [, key, raw] = m
+    let value = raw.trim()
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1)
+    }
+    if (process.env[key] === undefined) process.env[key] = value
+  }
+}
+loadEnvFile()
 
 const env = {
   url: process.env.SUPABASE_URL ?? "http://127.0.0.1:54321",
