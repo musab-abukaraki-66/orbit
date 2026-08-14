@@ -10,28 +10,21 @@ export function OrbitMark({ className }: { className?: string }) {
       aria-hidden="true"
       className={cn("size-5", className)}
     >
-      <circle cx="12" cy="12" r="2.5" fill="currentColor" />
-      <ellipse
-        cx="12"
-        cy="12"
-        rx="9.5"
-        ry="4"
-        transform="rotate(-30 12 12)"
+      <path
+        d="M4.81 16.01 A8 5 -26 1 1 19.19 8.99"
         stroke="currentColor"
-        strokeWidth="1.5"
-        opacity="0.55"
+        strokeWidth="2"
+        strokeLinecap="round"
+        opacity="0.45"
       />
-      <ellipse
-        cx="12"
-        cy="12"
-        rx="9.5"
-        ry="4"
-        transform="rotate(35 12 12)"
+      <path
+        d="M19.19 8.99 A8 5 -26 1 0 4.81 16.01"
         stroke="currentColor"
-        strokeWidth="1.5"
-        opacity="0.3"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
-      <circle cx="20.5" cy="6.5" r="1.4" fill="currentColor" opacity="0.9" />
+      <circle cx="6.39" cy="15.24" r="1.9" fill="currentColor" />
+      <circle cx="19.19" cy="8.99" r="1.5" fill="currentColor" />
     </svg>
   )
 }
