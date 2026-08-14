@@ -1,5 +1,15 @@
 import Link from "next/link"
-import { ChevronDown, Layers, Sparkles, SquareKanban, Wifi, Zap } from "lucide-react"
+import {
+  ChevronDown,
+  Columns3,
+  Layers,
+  MousePointerClick,
+  Sparkles,
+  SquareKanban,
+  Users,
+  Wifi,
+  Zap,
+} from "lucide-react"
 
 import { OrbitHeroVisual } from "@/components/orbit-hero-visual"
 import { LandingMotion } from "@/components/landing/landing-motion"
@@ -69,6 +79,30 @@ const captions: Record<string, string> = {
   "Realtime sync": "no refresh required",
   "AI assistant": "writing + summaries",
 }
+
+const steps = [
+  {
+    num: "01",
+    icon: Users,
+    title: "Create a team",
+    description:
+      "Invite the people who ship with you and pick a workspace. Set up takes minutes, not meetings.",
+  },
+  {
+    num: "02",
+    icon: Columns3,
+    title: "Organize into boards",
+    description:
+      "Lay out columns that match how your work actually moves — backlog, in progress, done.",
+  },
+  {
+    num: "03",
+    icon: MousePointerClick,
+    title: "Drag, assign, ship",
+    description:
+      "Move cards and watch updates land in real time. Tag an owner, set a priority, push work out the door.",
+  },
+]
 
 function renderCardDetail(title: string) {
   if (title === "Workspaces") {
@@ -299,16 +333,98 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
+
+        <section
+          id="how"
+          data-how-section
+          className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 sm:py-24"
+        >
+          <div data-how-copy className="mb-12 max-w-2xl">
+            <p className="font-mono text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase">
+              the flow
+            </p>
+            <h2 className="mt-3 text-balance text-3xl font-bold tracking-tight sm:text-4xl">
+              From empty workspace to shipping, in three steps.
+            </h2>
+            <p className="mt-3 text-muted-foreground">
+              No setup gauntlet. Orbit is shaped around the way focused teams
+              already work.
+            </p>
+          </div>
+          <ol data-how-steps className="grid gap-5 sm:grid-cols-3">
+            {steps.map((step) => {
+              const Icon = step.icon
+              return (
+                <li
+                  key={step.num}
+                  data-how-step
+                  className="flex flex-col gap-3 rounded-xl border bg-card p-6 shadow-sm transition-colors duration-150 hover:border-foreground/15 hover:shadow-md"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="flex size-9 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                      <Icon className="size-4" />
+                    </span>
+                    <span className="font-mono text-xs font-medium text-brand">
+                      {step.num}
+                    </span>
+                  </div>
+                  <h3 className="text-base font-semibold">{step.title}</h3>
+                  <p className="leading-relaxed text-muted-foreground">
+                    {step.description}
+                  </p>
+                </li>
+              )
+            })}
+          </ol>
+        </section>
+
+        <section
+          data-cta-section
+          className="relative overflow-hidden border-t bg-muted/30"
+        >
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute left-1/2 top-1/2 size-[42rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand/10 blur-3xl"
+          />
+          <div
+            data-cta-content
+            className="relative mx-auto flex w-full max-w-3xl flex-col items-center gap-6 px-4 py-24 text-center sm:px-6 sm:py-32"
+          >
+            <p className="font-mono text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase">
+              ready when you are
+            </p>
+            <h2 className="text-balance text-4xl font-bold tracking-tight sm:text-5xl">
+              Start planning in perfect orbit.
+            </h2>
+            <p className="max-w-md text-lg leading-relaxed text-muted-foreground">
+              Your first board is a click away. Free while we&apos;re in beta —
+              no credit card.
+            </p>
+            <Link
+              href="/app"
+              data-magnetic
+              className={cn(
+                buttonVariants({ size: "lg" }),
+                "transition-shadow hover:shadow-lg hover:shadow-brand/25",
+              )}
+            >
+              Open the app
+            </Link>
+          </div>
+        </section>
       </main>
 
       <footer className="border-t">
-        <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-4 px-4 py-8 text-sm text-muted-foreground sm:flex-row sm:px-6">
-          <div className="flex items-center gap-2">
-            <OrbitMark className="size-4 text-brand" />
-            <span>Orbit</span>
+        <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-4 px-4 py-10 text-sm text-muted-foreground sm:flex-row sm:px-6">
+          <div className="flex items-center gap-2.5">
+            <OrbitMark className="size-5 text-brand" />
+            <span className="font-semibold text-foreground">Orbit</span>
+            <span className="hidden font-mono text-xs sm:block">
+              kanban for teams that ship
+            </span>
           </div>
           <p className="font-mono text-xs">
-            built with Next.js · plan · track · ship
+            © {new Date().getFullYear()} Orbit · plan · track · ship
           </p>
         </div>
       </footer>

@@ -203,7 +203,58 @@ export function LandingMotion({ children }: { children: React.ReactNode }) {
         )
       }
 
-      // 7. Cursor-reactive detail (pointer devices only): a soft brand glow
+      // 7. How it works: the heading eases in, then the three steps stagger.
+      const how = root.querySelector<HTMLElement>("[data-how-section]")
+      if (how) {
+        const howCopy = root.querySelector<HTMLElement>("[data-how-copy]")
+        if (howCopy) {
+          gsap.fromTo(
+            howCopy,
+            { y: 16, autoAlpha: 0 },
+            {
+              y: 0,
+              autoAlpha: 1,
+              duration: 0.5,
+              ease: "power2.out",
+              scrollTrigger: { trigger: how, start: "top 90%", once: true },
+            }
+          )
+        }
+        const stepEls = how.querySelectorAll<HTMLElement>("[data-how-step]")
+        gsap.fromTo(
+          stepEls,
+          { y: 24, autoAlpha: 0 },
+          {
+            y: 0,
+            autoAlpha: 1,
+            duration: 0.5,
+            ease: "power2.out",
+            stagger: 0.12,
+            scrollTrigger: { trigger: how, start: "top 80%", once: true },
+          }
+        )
+      }
+
+      // 8. Closing CTA: the whole beat rises into place before the footer.
+      const cta = root.querySelector<HTMLElement>("[data-cta-section]")
+      if (cta) {
+        const ctaContent = root.querySelector<HTMLElement>("[data-cta-content]")
+        if (ctaContent) {
+          gsap.fromTo(
+            ctaContent,
+            { y: 24, autoAlpha: 0 },
+            {
+              y: 0,
+              autoAlpha: 1,
+              duration: 0.6,
+              ease: "power2.out",
+              scrollTrigger: { trigger: cta, start: "top 85%", once: true },
+            }
+          )
+        }
+      }
+
+      // 9. Cursor-reactive detail (pointer devices only): a soft brand glow
       //    trails the cursor within the hero, and the two primary CTAs get a
       //    gentle magnetic pull.
       if (window.matchMedia("(pointer: fine)").matches) {
