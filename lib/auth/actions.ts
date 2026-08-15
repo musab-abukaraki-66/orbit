@@ -22,12 +22,22 @@ function getRedirectOrigin() {
   return "http://127.0.0.1:3000"
 }
 
+// Only ever redirect to a same-origin path so a crafted `next` can't be used
+// as an open redirect.
+function safeNext(raw: FormDataEntryValue | null): string | null {
+  const value = String(raw ?? "").trim()
+  if (!value.startsWith("/")) return null
+  if (value.startsWith("//")) return null
+  return value
+}
+
 export async function signin(
   _prevState: AuthFormState,
   formData: FormData,
 ): Promise<AuthFormState> {
   const email = String(formData.get("email") ?? "").trim()
   const password = String(formData.get("password") ?? "")
+  const next = safeNext(formData.get("next"))
 
   if (!email || !password) {
     return { message: "Please enter your email and password." }
@@ -45,7 +55,7 @@ export async function signin(
     }
   }
 
-  redirect("/app")
+  redirect(next ?? "/app")
 }
 
 export async function signup(
@@ -55,6 +65,7 @@ export async function signup(
   const email = String(formData.get("email") ?? "").trim()
   const password = String(formData.get("password") ?? "")
   const fullName = String(formData.get("fullName") ?? "").trim()
+  const next = safeNext(formData.get("next"))
 
   if (!email || !fullName) {
     return { message: "Please enter your name and email." }
@@ -86,7 +97,7 @@ export async function signup(
     after(async () => {
       await sendWelcomeEmail(userEmail, fullName)
     })
-    redirect("/app")
+    redirect(next ?? "/app")
   }
 
   return {
