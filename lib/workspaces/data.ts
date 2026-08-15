@@ -2,13 +2,13 @@ import { cache } from "react"
 import { cookies } from "next/headers"
 
 import { createClient } from "@/lib/supabase/server"
-import { getFirstTeam } from "@/lib/auth/session"
+import { getActiveTeam } from "@/lib/auth/session"
 import { getBoardsForWorkspace } from "@/lib/boards/data"
 
 export const ACTIVE_WORKSPACE_COOKIE = "orbit_active_workspace"
 
 export type WorkspaceContext = {
-  team: NonNullable<Awaited<ReturnType<typeof getFirstTeam>>>
+  team: NonNullable<Awaited<ReturnType<typeof getActiveTeam>>>
   workspaces: Awaited<ReturnType<typeof getWorkspacesForTeam>>
   activeWorkspace: Awaited<ReturnType<typeof getWorkspacesForTeam>>[number] | null
   boards: Awaited<ReturnType<typeof getBoardsForWorkspace>>
@@ -63,7 +63,7 @@ export async function getBoardCountsByWorkspace(_teamId: string) {
 export async function getWorkspaceContext(
   userId: string,
 ): Promise<WorkspaceContext | null> {
-  const team = await getFirstTeam(userId)
+  const team = await getActiveTeam(userId)
   if (!team) return null
 
   const workspaces = await getWorkspacesForTeam(team.id)

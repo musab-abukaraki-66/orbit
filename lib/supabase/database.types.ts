@@ -104,32 +104,52 @@ export type Database = {
           },
         ]
       }
-      profiles: {
+      invitations: {
         Row: {
-          avatar_url: string | null
+          accepted_at: string | null
           created_at: string
-          email: string | null
-          full_name: string | null
+          email: string
+          expires_at: string
           id: string
-          updated_at: string
+          invited_by: string
+          role: string
+          status: string
+          team_id: string
+          token: string
         }
         Insert: {
-          avatar_url?: string | null
+          accepted_at?: string | null
           created_at?: string
-          email?: string | null
-          full_name?: string | null
-          id: string
-          updated_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by: string
+          role: string
+          status?: string
+          team_id: string
+          token?: string
         }
         Update: {
-          avatar_url?: string | null
+          accepted_at?: string | null
           created_at?: string
-          email?: string | null
-          full_name?: string | null
+          email?: string
+          expires_at?: string
           id?: string
-          updated_at?: string
+          invited_by?: string
+          role?: string
+          status?: string
+          team_id?: string
+          token?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "invitations_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       labels: {
         Row: {
@@ -165,6 +185,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       task_labels: {
         Row: {
@@ -389,7 +436,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      accept_invitation: { Args: { p_token: string }; Returns: string }
+      get_invitation: {
+        Args: { p_token: string }
+        Returns: {
+          email: string
+          expires_at: string
+          role: string
+          status: string
+          team_id: string
+          team_name: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

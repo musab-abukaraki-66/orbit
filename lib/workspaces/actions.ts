@@ -6,7 +6,7 @@ import { redirect } from "next/navigation"
 
 import { slugify } from "@/lib/slugify"
 import { createClient } from "@/lib/supabase/server"
-import { getFirstTeam } from "@/lib/auth/session"
+import { getActiveTeam } from "@/lib/auth/session"
 import { ACTIVE_WORKSPACE_COOKIE } from "@/lib/workspaces/data"
 
 export type WorkspaceFormState =
@@ -40,7 +40,7 @@ export async function createWorkspace(
   }
 
   const { supabase, user } = await getCurrentUserOrRedirect()
-  const team = await getFirstTeam(user.id)
+  const team = await getActiveTeam(user.id)
   if (!team) redirect("/onboarding")
 
   const baseSlug = slugify(name)
@@ -80,7 +80,7 @@ export async function switchWorkspace(
   workspaceId: string,
 ): Promise<WorkspaceActionResult> {
   const { supabase, user } = await getCurrentUserOrRedirect()
-  const team = await getFirstTeam(user.id)
+  const team = await getActiveTeam(user.id)
   if (!team) redirect("/onboarding")
 
   const { data: workspace } = await supabase
