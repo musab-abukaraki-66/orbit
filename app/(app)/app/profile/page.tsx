@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 
-import { getFirstTeam, requireUser } from "@/lib/auth/session"
+import { getActiveTeam, requireUser } from "@/lib/auth/session"
 import {
   Avatar,
   AvatarFallback,
@@ -29,7 +29,7 @@ function initialsFor(name: string, email?: string) {
 
 export default async function ProfilePage() {
   const user = await requireUser()
-  const team = await getFirstTeam(user.id)
+  const team = await getActiveTeam(user.id)
 
   const fullName = String(user.user_metadata?.full_name ?? "").trim()
   const email = user.email ?? ""
