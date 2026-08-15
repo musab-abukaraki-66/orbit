@@ -39,7 +39,7 @@ function section(name) {
   console.log(`\n=== ${name} ===`)
 }
 
-function makeSessionClient(email) {
+function makeSessionClient(_email) {
   const cookieStore = new Map()
   const client = createServerClient(env.url, env.anon, {
     cookies: {

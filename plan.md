@@ -14,8 +14,8 @@ Track implementation progress against [prd.md](./prd.md). App code lives in `orb
 | M2 | Supabase local & data model | `[x]` Done | — |
 | M3 | Auth & onboarding | `[x]` Done | — |
 | M4 | Workspaces & boards | `[x]` Done | — |
-| M5 | Kanban & drag-and-drop | `[ ]` Not started | — |
-| M6 | Team & user management | `[ ]` Not started | — |
+| M5 | Kanban & drag-and-drop | `[x]` Done | — |
+| M6 | Team & user management | `[x]` Done | — |
 | M7 | Stripe billing | `[ ]` Not started | — |
 | M8 | AI features | `[ ]` Not started | — |
 | M9 | Polish & production readiness | `[ ]` Not started | — |
@@ -26,12 +26,12 @@ Track implementation progress against [prd.md](./prd.md). App code lives in `orb
 
 **Goal:** Usable app shell with Orbit branding, theming, and route protection scaffolding.
 
-- [ ] Install and configure shadcn/ui on Tailwind v4
-- [ ] App shell: sidebar, header, main content area
-- [ ] Dark mode default with light/dark toggle (class-based)
-- [ ] Replace create-next-app boilerplate with Orbit landing/home
-- [ ] Add `proxy.ts` for auth guards and redirects (Next.js 16)
-- [ ] Add `.env.local.example` with placeholder keys
+- [x] Install and configure shadcn/ui on Tailwind v4
+- [x] App shell: sidebar, header, main content area
+- [x] Dark mode default with light/dark toggle (class-based)
+- [x] Replace create-next-app boilerplate with Orbit landing/home
+- [x] Add `proxy.ts` for auth guards and redirects (Next.js 16)
+- [x] Add `.env.local.example` with placeholder keys
 
 **Done when:** App loads with Orbit UI shell, theme toggle works, proxy.ts stub redirects unauthenticated routes.
 
@@ -86,12 +86,12 @@ Track implementation progress against [prd.md](./prd.md). App code lives in `orb
 
 **Goal:** Full Kanban board experience with live updates.
 
-- [ ] Column model (status lanes) seeded per board
-- [ ] Task cards: title, description, assignee, priority, status
-- [ ] Task CRUD server actions
-- [ ] Drag-and-drop: reorder within column, move across columns
-- [ ] Supabase Realtime subscriptions for board changes
-- [ ] Keyboard-accessible DnD fallbacks
+- [x] Column model (status lanes) seeded per board
+- [x] Task cards: title, description, assignee, priority, status
+- [x] Task CRUD server actions
+- [x] Drag-and-drop: reorder within column, move across columns
+- [x] Supabase Realtime subscriptions for board changes
+- [x] Keyboard-accessible DnD fallbacks
 
 **Done when:** Two clients see the same board update in real time; tasks move smoothly via drag-and-drop.
 
@@ -172,3 +172,7 @@ Track implementation progress against [prd.md](./prd.md). App code lives in `orb
 | 2026-08-10 | M2 | Supabase local + multi-tenant schema: teams, workspaces, boards, columns, tasks; team/workspace memberships with owner/admin/member roles; RLS via SECURITY DEFINER helpers in `private` schema; `lib/supabase/` server+browser clients; generated `database.types.ts`; `supabase db reset` clean; verified cross-tenant isolation; build + lint pass |
 | 2026-08-10 | M3 | Auth & onboarding implemented and tested: Supabase sign up/sign in/sign out, auth pages in `(auth)/` route group, team creation onboarding, `proxy.ts` route protection, Resend welcome email, basic user profile page |
 | 2026-08-11 | M4 | Workspaces & boards implemented and tested: workspace create/list/switch (cookie-based active workspace), board create/list within a workspace, board detail page with column shell, full CRUD server actions for workspaces/boards (`lib/workspaces/actions.ts`, `lib/boards/actions.ts`), sidebar workspace picker + board navigation. New shadcn `dialog` + `label` components. Verified: lint, typecheck, production build, RLS cross-tenant isolation (two users), and authenticated smoke test of `/app`, `/app/boards`, `/app/boards/[boardId]`, 404 for unknown board, active-workspace cookie round-trip |
+| 2026-08-12 | M5 | Kanban implemented and tested: M5 migration (`20260812120000_m5_kanban.sql`) adds `tasks.board_id`, fractional double-precision `position`, status derived from column via sync trigger, default Backlog/Todo/In Progress/Done lanes seeded per board (trigger + backfill), public `profiles` mirror with RLS, `tasks` added to realtime publication, `replica identity full` so DELETE events are filterable. dnd-kit drag-and-drop with midpoint positioning + reindex fallback, keyboard-accessible DnD, task CRUD + move server actions (`lib/tasks/actions.ts`), board realtime subscription in `components/kanban/kanban-board.tsx`. New shadcn `textarea`. Verified: `scripts/verify-m5.mjs` 46/46 (column seeding, task CRUD, ordering persistence, profiles, cross-tenant isolation, Realtime INSERT/UPDATE/DELETE delivery + RLS, HTTP smoke), plus M4 33/33, typecheck, lint, production build |
+| 2026-08-14 | Landing | Landing page redesign + brand polish: GSAP signature hero in `components/landing/landing-motion.tsx` with a bundle-isolation guard (`scripts/verify-bundle-isolation.mjs` in `postbuild`) asserting GSAP chunks never ship to authenticated routes; favicon + Apple touch icon + OG image as route handlers (`app/icon.tsx`, `app/apple-icon.tsx`, `app/opengraph-image.tsx`), `components/brand-mark-visual.tsx`, `components/orbit-mark.tsx` updates. Verified: build + postbuild bundle check pass |
+| 2026-08-14 | M5.1 | Kanban polish layer on M5: team-scoped labels + task label links + task due dates via migration `20260814120000_m51_labels_due_date.sql` (label pool unique on `(team_id, lower(name))`, `task_labels` M:N junction, `tasks.due_date date`, full RLS via `private.get_task_team_id`/`get_label_team_id`); label + due-date management in the task detail side-panel (`components/kanban/task-form-dialog.tsx`, label picker, due-date validation), chips on cards (`task-card.tsx`, `label-chips.tsx`), alternate list view with sort/search/filter (`task-list.tsx`) and board/list toggle in `kanban-board.tsx`; `scripts/verify-m5.mjs` now loads `.env.local` standalone (same pattern as `seed-demo.mjs`). Verified: `verify-m5.mjs` 46/46, M5.1 labels/due-date/RLS checks 16/16 (cross-team label/link access denied), typecheck, lint, production build + bundle isolation |
+| 2026-08-14 | M6 | M6 Team & User Management: migration + RLS + accept RPC (done), server actions, `/app/team` UI, `/invite/[token]` page, `verify-m6.mjs`, `plan.md` docs — full check suite passes (tsc, eslint, build, verify-m6, verify-m5 regression), show complete diff, no commit until user review. |

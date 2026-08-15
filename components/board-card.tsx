@@ -9,7 +9,13 @@ type BoardCardData = {
   name: string
 }
 
-export function BoardCard({ board }: { board: BoardCardData }) {
+export function BoardCard({
+  board,
+  taskCount,
+}: {
+  board: BoardCardData
+  taskCount: number
+}) {
   return (
     <Card size="sm" className="transition-colors hover:ring-foreground/25">
       <CardContent className="flex items-center gap-3">
@@ -22,7 +28,9 @@ export function BoardCard({ board }: { board: BoardCardData }) {
           </div>
           <div className="flex min-w-0 flex-col gap-0.5">
             <span className="truncate text-sm font-medium">{board.name}</span>
-            <span className="text-xs text-muted-foreground">No tasks yet</span>
+            <span className="text-xs text-muted-foreground">
+              {taskCount} task{taskCount === 1 ? "" : "s"}
+            </span>
           </div>
         </Link>
         <BoardMenu boardId={board.id} boardName={board.name} />

@@ -32,7 +32,7 @@ const check = (name, cond, detail) => {
 }
 const section = (s) => console.log(`\n=== ${s} ===`)
 
-function makeSessionClient(email, password) {
+function makeSessionClient(_email, _password) {
   const cookieStore = new Map()
   const client = createServerClient(env.url, env.anon, {
     cookies: {
@@ -75,7 +75,7 @@ async function postAction(path, actionId, cookie, args) {
 
 async function main() {
   const email = `sa-${randomUUID().slice(0, 8)}@test.local`
-  const { data: su, error: suErr } = await ADMIN.auth.signUp({
+  const { error: suErr } = await ADMIN.auth.signUp({
     email, password: "TestPass123!", options: { data: { full_name: "SA Test" } },
   })
   if (suErr) throw new Error("signup: " + suErr.message)
