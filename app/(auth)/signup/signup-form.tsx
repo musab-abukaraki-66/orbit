@@ -7,7 +7,7 @@ import { signup, type AuthFormState } from "@/lib/auth/actions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
-export function SignupForm() {
+export function SignupForm({ next }: { next?: string }) {
   const [state, formAction, pending] = useActionState<
     AuthFormState,
     FormData
@@ -15,6 +15,7 @@ export function SignupForm() {
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
+      {next ? <input type="hidden" name="next" value={next} /> : null}
       {state?.message ? (
         <p
           role="alert"
