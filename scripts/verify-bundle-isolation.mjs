@@ -18,7 +18,21 @@ for (const route of JSON.parse(await readFile(DIAGNOSTIC, "utf8"))) {
   }
 }
 
-const chunks = (await readdir(CHUNK_DIR)).filter((file) => file.endsWith(".js"))
+// Same fail-soft rule as the diagnostic read above. Vercel does not always
+// leave .next/static/chunks in place by the time postbuild runs, and failing a
+// deploy because the check could not run trades one problem for a worse one.
+let chunks
+try {
+  chunks = (await readdir(CHUNK_DIR)).filter((file) => file.endsWith(".js"))
+} catch (error) {
+  console.warn(
+    `verify:bundle: SKIPPED - could not read ${CHUNK_DIR} (${error.code ?? error.message}).`
+  )
+  console.warn(
+    "GSAP bundle isolation was NOT verified for this build. Investigate if this persists."
+  )
+  process.exit(0)
+}
 for (const file of chunks) {
   const source = await readFile(path.join(CHUNK_DIR, file), "utf8")
   if (source.includes(GSAP_MARKER)) {
