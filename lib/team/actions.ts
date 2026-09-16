@@ -8,6 +8,7 @@ import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { ACTIVE_TEAM_COOKIE } from "@/lib/auth/session"
 import { sendInvitationEmail } from "@/lib/resend/invitation"
+import { getSiteOrigin } from "@/lib/site-url"
 
 export type TeamRole = "owner" | "admin" | "member"
 
@@ -555,14 +556,4 @@ function mapAcceptError(message: string): string {
     return "This invitation is invalid or has already been used."
   }
   return message
-}
-
-function getSiteOrigin(): string {
-  if (process.env.NEXT_PUBLIC_SITE_URL) {
-    return process.env.NEXT_PUBLIC_SITE_URL
-  }
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`
-  }
-  return "http://127.0.0.1:3000"
 }

@@ -4,6 +4,7 @@ import { after } from "next/server"
 import { redirect } from "next/navigation"
 
 import { sendWelcomeEmail } from "@/lib/resend/welcome"
+import { getSiteOrigin } from "@/lib/site-url"
 import { createClient } from "@/lib/supabase/server"
 
 export type AuthFormState =
@@ -11,16 +12,6 @@ export type AuthFormState =
       message: string
     }
   | undefined
-
-function getRedirectOrigin() {
-  if (process.env.NEXT_PUBLIC_SITE_URL) {
-    return process.env.NEXT_PUBLIC_SITE_URL
-  }
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`
-  }
-  return "http://127.0.0.1:3000"
-}
 
 // Only ever redirect to a same-origin path so a crafted `next` can't be used
 // as an open redirect.
@@ -82,7 +73,7 @@ export async function signup(
     password,
     options: {
       data: { full_name: fullName },
-      emailRedirectTo: `${getRedirectOrigin()}/login`,
+      emailRedirectTo: `${getSiteOrigin()}/login`,
     },
   })
 
