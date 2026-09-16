@@ -55,7 +55,7 @@ const features = [
     icon: Layers,
     emphasis: false,
     description:
-      "Organize projects across teams and workspaces with a structure that scales.",
+      "Projects, people and roles in one workspace. Invite teammates with a link — no email service required.",
   },
   {
     title: "Realtime sync",
@@ -69,7 +69,7 @@ const features = [
     icon: Sparkles,
     emphasis: false,
     description:
-      "Smart writing and summaries help your team move faster and stay aligned.",
+      "Coming soon: summaries and drafting inside your tasks. Preview the experience in the app today.",
   },
 ]
 
@@ -77,23 +77,23 @@ const captions: Record<string, string> = {
   Boards: "drag & drop lanes",
   Workspaces: "structure that scales",
   "Realtime sync": "no refresh required",
-  "AI assistant": "writing + summaries",
+  "AI assistant": "coming soon",
 }
 
 const steps = [
   {
     num: "01",
     icon: Users,
-    title: "Create a team",
+    title: "Create a workspace",
     description:
-      "Invite the people who ship with you and pick a workspace. Set up takes minutes, not meetings.",
+      "Name it, invite the people who ship with you with a link, and land on a board with sample tasks in under a minute.",
   },
   {
     num: "02",
     icon: Columns3,
-    title: "Organize into boards",
+    title: "Organize into projects",
     description:
-      "Lay out columns that match how your work actually moves — backlog, in progress, done.",
+      "Every project gets a board and a list. Shape the columns to match how your work actually moves.",
   },
   {
     num: "03",
@@ -218,7 +218,7 @@ export default function LandingPage() {
                 <span className="text-brand">in perfect orbit</span>.
               </h1>
               <p className="max-w-md text-lg leading-relaxed text-muted-foreground">
-                Orbit brings your boards, tasks, and teammates into one focused
+                Orbit brings your projects, tasks, and teammates into one focused
                 workspace. Everything your team needs, moving in sync.
               </p>
               <div className="flex flex-wrap items-center gap-3">

@@ -1,203 +1,77 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import {
-  CheckCircle2,
-  Clock,
-  MailX,
-  UserRoundCheck,
-  XCircle,
-} from "lucide-react"
+import { Mail, ShieldAlert, Users } from "lucide-react"
 
 import { getCurrentUser } from "@/lib/auth/session"
 import { createClient } from "@/lib/supabase/server"
-import { AcceptInvitationButton } from "@/components/team/accept-invitation"
-import { SignOutButton } from "@/components/sign-out-button"
+import { AcceptInvitationButton } from "@/components/members/accept-invitation-button"
 import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
-export const metadata: Metadata = {
-  title: "Join a team",
-}
+export const metadata: Metadata = { title: "You're invited" }
 
-type InviteInfo = {
-  team_id: string
-  team_name: string
-  email: string
-  role: string
-  status: string
-  expires_at: string
-}
-
-export default async function InvitePage({
-  params,
-}: {
-  params: Promise<{ token: string }>
-}) {
+export default async function InvitePage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params
   const user = await getCurrentUser()
-
   const supabase = await createClient()
   const { data } = await supabase.rpc("get_invitation", { p_token: token })
-  const invite = (data as InviteInfo[] | null)?.[0] ?? null
+  const invite = data?.[0] ?? null
+  const inviteUrl = `/invite/${token}`
 
-  const isExpired = invite
-    ? isPast(new Date(invite.expires_at).getTime())
-    : false
-
-  let state:
-    | "invalid"
-    | "expired"
-    | "closed"
-    | "logged-out"
-    | "mismatch"
-    | "ready" = "invalid"
-
-  if (invite) {
-    if (isExpired || invite.status === "expired") {
-      state = "expired"
-    } else if (invite.status === "accepted" || invite.status === "revoked") {
-      state = "closed"
-    } else if (!user) {
-      state = "logged-out"
-    } else if (
-      invite.email.toLowerCase() !== (user.email ?? "").trim().toLowerCase()
-    ) {
-      state = "mismatch"
-    } else {
-      state = "ready"
-    }
+  if (!invite) {
+    return (
+      <Shell icon={ShieldAlert} title="This invitation isn't valid" description="The link may be incomplete, or the invitation was revoked. Ask the person who invited you for a new link.">
+        <Button variant="outline" render={<Link href="/app" />}>Go to Orbit</Button>
+      </Shell>
+    )
   }
 
-  const nextHref = `/invite/${token}`
-  const roleLabel = invite
-    ? invite.role === "admin"
-      ? "an admin"
-      : "a member"
-    : "a member"
+  if (invite.status !== "pending") {
+    const copy = invite.status === "accepted" ? "This invitation has already been used." : invite.status === "expired" ? "This invitation has expired." : "This invitation was revoked."
+    return (
+      <Shell icon={ShieldAlert} title={copy} description={`Ask ${invite.inviter_name ?? "the workspace admin"} to send you a fresh invitation to ${invite.workspace_name}.`}>
+        <Button variant="outline" render={<Link href="/app" />}>Go to Orbit</Button>
+      </Shell>
+    )
+  }
+
+  if (!user) {
+    return (
+      <Shell icon={Users} title={`Join ${invite.workspace_name} on Orbit`} description={`${invite.inviter_name ?? "A teammate"} invited ${invite.email_masked} to join as ${invite.role === "admin" ? "an admin" : "a member"}. Create an account with that email, or sign in if you already have one.`}>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button size="lg" render={<Link href={`/signup?next=${encodeURIComponent(inviteUrl)}`} />}>Create account</Button>
+          <Button size="lg" variant="outline" render={<Link href={`/login?next=${encodeURIComponent(inviteUrl)}`} />}>I already have an account</Button>
+        </div>
+      </Shell>
+    )
+  }
+
+  if (!invite.email_matches) {
+    return (
+      <Shell icon={Mail} title="This invitation is for a different email" description={`It was sent to ${invite.email_masked}, but you're signed in as ${user.email}. Sign in with the invited address, or ask for a new invitation to this one.`}>
+        <Button variant="outline" render={<Link href={`/login?next=${encodeURIComponent(inviteUrl)}`} />}>Switch account</Button>
+      </Shell>
+    )
+  }
 
   return (
-    <div className="w-full max-w-md flex flex-col gap-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            {state === "ready" ? (
-              <UserRoundCheck className="size-5 text-brand" />
-            ) : null}
-            {state === "ready"
-              ? `Join ${invite!.team_name}`
-              : state === "logged-out"
-                ? "You're invited to join a team"
-                : "Invitation"}
-          </CardTitle>
-          {state === "ready" ? (
-            <CardDescription>
-              You&apos;ll join as {roleLabel} on the invitation.
-            </CardDescription>
-          ) : state === "logged-out" ? (
-            <CardDescription>
-              {invite!.team_name} has invited you to Orbit. Sign in or create an
-              account to join.
-            </CardDescription>
-          ) : null}
-        </CardHeader>
-
-        <CardContent className="flex flex-col gap-3">
-          {state === "invalid" ? (
-            <InlineNotice
-              icon={<XCircle className="size-4" />}
-              text="This invitation link is invalid. It may have been mistyped."
-            />
-          ) : null}
-
-          {state === "expired" ? (
-            <InlineNotice
-              icon={<Clock className="size-4" />}
-              text="This invitation has expired. Ask someone on the team to send you a new one."
-            />
-          ) : null}
-
-          {state === "closed" ? (
-            <InlineNotice
-              icon={<CheckCircle2 className="size-4" />}
-              text="This invitation has already been used. If you think this is an error, ask the team owner."
-            />
-          ) : null}
-
-          {state === "logged-out" ? (
-            <div className="flex flex-col gap-2">
-              <Button
-                size="lg"
-                render={<Link href={`/login?next=${encodeURIComponent(nextHref)}`} />}
-              >
-                Sign in
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                render={<Link href={`/signup?next=${encodeURIComponent(nextHref)}`} />}
-              >
-                Create an account
-              </Button>
-            </div>
-          ) : null}
-
-          {state === "mismatch" ? (
-            <div className="flex flex-col gap-3">
-              <InlineNotice
-                icon={<MailX className="size-4" />}
-                text={`This invitation was sent to ${invite!.email}. You're signed in as ${user!.email}.`}
-              />
-              <p className="text-sm text-muted-foreground">
-                Sign out and sign in with the account the invitation was sent
-                to.
-              </p>
-              <SignOutButton label="Sign out and switch account" />
-            </div>
-          ) : null}
-
-          {state === "ready" ? (
-            <AcceptInvitationButton token={token} />
-          ) : null}
-        </CardContent>
-
-        {state === "logged-out" || state === "mismatch" ? (
-          <CardFooter className="flex justify-center border-t pt-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              render={<Link href="/" />}
-            >
-              Back to Orbit
-            </Button>
-          </CardFooter>
-        ) : null}
-      </Card>
-    </div>
+    <Shell icon={Users} title={`Join ${invite.workspace_name}`} description={`${invite.inviter_name ?? "A teammate"} invited you to join as ${invite.role === "admin" ? "an admin" : "a member"}. You'll see the team's projects, tasks and activity right away.`}>
+      <AcceptInvitationButton token={token} />
+    </Shell>
   )
 }
 
-function InlineNotice({
-  icon,
-  text,
-}: {
-  icon: React.ReactNode
-  text: string
-}) {
+function Shell({ icon: Icon, title, description, children }: { icon: React.ComponentType<{ className?: string }>; title: string; description: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-start gap-2 rounded-lg border border-muted bg-muted/50 px-3 py-2.5 text-sm text-muted-foreground [&_svg]:mt-0.5 [&_svg]:size-4">
-      {icon}
-      <span>{text}</span>
-    </div>
+    <Card className="w-full max-w-md">
+      <CardHeader className="items-center text-center">
+        <div className="mb-2 flex size-12 items-center justify-center rounded-full bg-brand/15 text-brand">
+          <Icon className="size-6" />
+        </div>
+        <CardTitle className="text-xl">{title}</CardTitle>
+        <CardDescription className="leading-relaxed">{description}</CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col items-center gap-3">{children}</CardContent>
+    </Card>
   )
-}
-
-function isPast(timestamp: number): boolean {
-  return timestamp < Date.now()
 }

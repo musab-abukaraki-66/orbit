@@ -23,12 +23,12 @@ export async function sendInvitationEmail({
   teamName: string
   role: "admin" | "member"
   acceptUrl: string
-}) {
+}): Promise<boolean> {
   if (!isConfigured()) {
     console.log(
       `[dev] RESEND_API_KEY not set — invitation email skipped for ${to}. Invite URL: ${acceptUrl}`,
     )
-    return
+    return false
   }
 
   const roleLabel = role === "admin" ? "an admin" : "a member"
@@ -56,4 +56,5 @@ export async function sendInvitationEmail({
       </div>
     `,
   })
+  return true
 }

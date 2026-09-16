@@ -4,7 +4,17 @@
 
 **Orbit** is a team project-management app inspired by Linear. Teams collaborate on tasks across workspaces and Kanban boards. The product spec lives at [`../prd.md`](../prd.md) (repo root, one level above this directory).
 
-**Current state:** Milestones M1–M5 (foundation & design system, Supabase data model, auth & onboarding, workspaces & boards, Kanban & drag-and-drop) are complete. M6 (team & user management) is next up (not yet started); M7–M9 are not started. See [`plan.md`](./plan.md) for the live status — it is the source of truth. All application code and config live in this directory (the directory containing `package.json`).
+**Current state (2026-09-16, v2):** the product was rebuilt on a greenfield v2 model — see [`README.md`](./README.md) for the feature list and setup. The milestone history below (M1–M9) describes the original board-centric prototype and is kept for context only.
+
+- **Model:** Workspace (org; members + roles owner/admin/member) → default Team (hidden until >1; owns statuses) → Projects (lead, status, health, updates) → Work items (`KEY-n`, status/priority/assignee/labels/due, comments, activity). Views (board/list/my-work/pulse) are lenses, not containers.
+- **Routing:** `/w/[workspace-slug]/...` (pulse, my-work, inbox, projects/[projectSlug]/{board,list,overview,updates}, items/[key], search, ai, profile, settings/*). `proxy.ts` guards `/w`, `/app`, `/onboarding`.
+- **Data:** single migration `supabase/migrations/20260916200000_v2_schema.sql` (schema, triggers, RPCs, RLS, realtime publication). Types in `lib/supabase/database.types.ts`. Data/actions under `lib/{auth,workspaces,members,projects,items,statuses,notifications,search,profile}`.
+- **Invitations** work without an email service: `create_invitation` RPC → shareable `/invite/<token>` link; signup-then-auto-join; email-match enforced; 14-day expiry; revoke.
+- **Realtime:** Supabase `postgres_changes` — `components/items/board.tsx` (live board) and `components/realtime/use-live-refresh.ts` (debounced `router.refresh()`). Channel topics must be unique per mount (the browser client is a singleton).
+- **AI and Billing are UI-only** (no AI API, no Stripe). Do not add paid infrastructure.
+- **Tests:** `npm run test:e2e` (`e2e/v2-journey.spec.ts`, `e2e/console-audit.spec.ts`) against a running dev server with `E2E_*` vars in `.env.local`.
+
+All application code and config live in this directory (the directory containing `package.json`).
 
 ## Product scope (from PRD)
 

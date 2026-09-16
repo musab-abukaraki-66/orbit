@@ -1,157 +1,64 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 
+import { requireUser } from "@/lib/auth/session"
 import { slugify } from "@/lib/slugify"
+import { deriveKey } from "@/lib/workspaces/key"
 import { createClient } from "@/lib/supabase/server"
-import { getActiveTeam } from "@/lib/auth/session"
-import { ACTIVE_WORKSPACE_COOKIE } from "@/lib/workspaces/data"
 
-export type WorkspaceFormState =
-  | {
-      ok: boolean
-      message?: string
-    }
-  | undefined
+export type FormState = { ok: boolean; message?: string } | undefined
 
-export type WorkspaceActionResult = {
-  ok: boolean
-  message?: string
-}
-
-async function getCurrentUserOrRedirect() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) redirect("/login")
-  return { supabase, user }
-}
-
-export async function createWorkspace(
-  _prevState: WorkspaceFormState,
-  formData: FormData,
-): Promise<WorkspaceFormState> {
+export async function createWorkspace(_prev: FormState, formData: FormData): Promise<FormState> {
   const name = String(formData.get("name") ?? "").trim()
-  if (!name) {
-    return { ok: false, message: "Please give your workspace a name." }
-  }
+  const withSample = String(formData.get("sample") ?? "on") !== "off"
+  if (name.length < 2) return { ok: false, message: "Give your workspace a name (at least 2 characters)." }
 
-  const { supabase, user } = await getCurrentUserOrRedirect()
-  const team = await getActiveTeam(user.id)
-  if (!team) redirect("/onboarding")
+  await requireUser()
+  const supabase = await createClient()
+  const base = slugify(name).slice(0, 36) || "workspace"
+  const key = deriveKey(name)
 
-  const baseSlug = slugify(name)
-
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    const suffix =
-      attempt === 0 ? "" : `-${Math.random().toString(36).slice(2, 6)}`
-    const { data, error } = await supabase
-      .from("workspaces")
-      .insert({ team_id: team.id, name, slug: `${baseSlug}${suffix}` })
-      .select("id")
-      .single()
-
-    if (!error) {
-      const cookieStore = await cookies()
-      cookieStore.set(ACTIVE_WORKSPACE_COOKIE, data.id, {
-        path: "/",
-        sameSite: "lax",
-      })
-      revalidatePath("/app", "layout")
-      redirect("/app")
+  let slug = base
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const { data, error } = await supabase.rpc("create_workspace", { p_name: name, p_slug: slug, p_key: key })
+    if (!error && data) {
+      if (withSample) {
+        await supabase.rpc("seed_sample_project", { p_workspace: data })
+      }
+      revalidatePath("/", "layout")
+      redirect(`/w/${slug}?welcome=1`)
     }
-
-    const isUniqueViolation = error.code === "23505"
-    if (!isUniqueViolation) {
+    if (error && !/duplicate|unique|already exists/i.test(error.message)) {
       return { ok: false, message: error.message }
     }
+    slug = `${base}-${Math.random().toString(36).slice(2, 6)}`
   }
-
-  return {
-    ok: false,
-    message: "Could not create your workspace. Please try again.",
-  }
+  return { ok: false, message: "Could not create the workspace. Please try again." }
 }
 
-export async function switchWorkspace(
-  workspaceId: string,
-): Promise<WorkspaceActionResult> {
-  const { supabase, user } = await getCurrentUserOrRedirect()
-  const team = await getActiveTeam(user.id)
-  if (!team) redirect("/onboarding")
-
-  const { data: workspace } = await supabase
-    .from("workspaces")
-    .select("id")
-    .eq("id", workspaceId)
-    .eq("team_id", team.id)
-    .maybeSingle()
-
-  if (!workspace) {
-    return { ok: false, message: "Workspace not found." }
-  }
-
-  const cookieStore = await cookies()
-  cookieStore.set(ACTIVE_WORKSPACE_COOKIE, workspace.id, {
-    path: "/",
-    sameSite: "lax",
-  })
-  revalidatePath("/", "layout")
-
-  return { ok: true }
-}
-
-export async function renameWorkspace(
-  workspaceId: string,
-  _prevState: WorkspaceFormState,
-  formData: FormData,
-): Promise<WorkspaceFormState> {
+export async function updateWorkspace(workspaceId: string, _prev: FormState, formData: FormData): Promise<FormState> {
   const name = String(formData.get("name") ?? "").trim()
-  if (!name) {
-    return { ok: false, message: "Please give your workspace a name." }
-  }
-
-  const { supabase } = await getCurrentUserOrRedirect()
+  if (name.length < 2) return { ok: false, message: "Workspace name must be at least 2 characters." }
+  const supabase = await createClient()
   const { data, error } = await supabase
     .from("workspaces")
     .update({ name })
     .eq("id", workspaceId)
-    .select("id")
+    .select("slug")
     .maybeSingle()
-
-  if (error) {
-    return { ok: false, message: error.message }
-  }
-  if (!data) {
-    return { ok: false, message: "Workspace not found." }
-  }
-
-  revalidatePath("/app", "layout")
-  return { ok: true }
+  if (error) return { ok: false, message: error.message }
+  if (!data) return { ok: false, message: "You don't have permission to rename this workspace." }
+  revalidatePath(`/w/${data.slug}`, "layout")
+  return { ok: true, message: "Workspace updated." }
 }
 
-export async function deleteWorkspace(
-  workspaceId: string,
-): Promise<WorkspaceActionResult> {
-  const { supabase } = await getCurrentUserOrRedirect()
-
-  const { data, error } = await supabase
-    .from("workspaces")
-    .delete()
-    .eq("id", workspaceId)
-    .select("id")
-    .maybeSingle()
-
-  if (error) {
-    return { ok: false, message: error.message }
-  }
-  if (!data) {
-    return { ok: false, message: "Workspace not found." }
-  }
-
-  revalidatePath("/app", "layout")
-  return { ok: true }
+export async function deleteWorkspace(workspaceId: string): Promise<FormState> {
+  const supabase = await createClient()
+  const { data, error } = await supabase.from("workspaces").delete().eq("id", workspaceId).select("id").maybeSingle()
+  if (error) return { ok: false, message: error.message }
+  if (!data) return { ok: false, message: "Only the workspace owner can delete it." }
+  revalidatePath("/", "layout")
+  redirect("/app")
 }

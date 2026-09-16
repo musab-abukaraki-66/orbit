@@ -9,7 +9,6 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
-    "seed:demo": "node scripts/seed-demo.mjs",
     "test:e2e": "playwright test"
   },
   "dependencies": {

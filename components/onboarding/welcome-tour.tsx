@@ -12,8 +12,7 @@ import {
 
 import { completeOnboardingTour } from "@/lib/onboarding/actions"
 import { cn } from "@/lib/utils"
-import { CreateBoardDialog } from "@/components/create-board-dialog"
-import { CreateWorkspaceDialog } from "@/components/create-workspace-dialog"
+import { useRouter } from "next/navigation"
 import { OrbitMark } from "@/components/orbit-mark"
 import { Button } from "@/components/ui/button"
 import {
@@ -27,14 +26,16 @@ const TOTAL_STEPS = 3
 
 export function WelcomeTour({
   firstName,
-  workspaceId,
+  slug,
+  projectSlug,
 }: {
   firstName: string
-  workspaceId: string | null
+  slug: string
+  projectSlug: string | null
 }) {
+  const router = useRouter()
   const [open, setOpen] = React.useState(true)
   const [step, setStep] = React.useState(0)
-  const [createOpen, setCreateOpen] = React.useState(false)
   const [, startTransition] = React.useTransition()
 
   // Persist once, whether the user finishes, skips, or presses Escape. The
@@ -88,8 +89,8 @@ export function WelcomeTour({
                   </DialogTitle>
                   <DialogDescription className="text-sm leading-relaxed">
                     Orbit is where your team plans and tracks work together.
-                    Tasks live on boards, boards live in workspaces, and
-                    everyone on your team sees the same picture in real time.
+                    Tasks live in projects, and everyone sees the same board
+                    update in real time — no more “where are you with this?”
                   </DialogDescription>
                 </>
               ) : null}
@@ -104,18 +105,18 @@ export function WelcomeTour({
                   <ul className="mt-1 flex flex-col gap-2">
                     <NavHint
                       icon={Home}
-                      title="Home"
-                      text="Your dashboard: an overview of workspaces and boards."
+                      title="Pulse"
+                      text="Who is working on what, overdue work, and what changed."
                     />
                     <NavHint
                       icon={Kanban}
-                      title="Boards"
-                      text="Every board in your current workspace, in one place."
+                      title="Projects"
+                      text="Each project has a board, a list, an overview and updates."
                     />
                     <NavHint
                       icon={Users}
-                      title="Team"
-                      text="Invite teammates by email and manage their roles."
+                      title="Settings → Members"
+                      text="Invite teammates with a link — no email service needed."
                     />
                   </ul>
                 </>
@@ -126,17 +127,11 @@ export function WelcomeTour({
                     Boards are where the work happens
                   </DialogTitle>
                   <DialogDescription className="text-sm leading-relaxed">
-                    A board is a set of columns — Backlog, Todo, In Progress,
-                    Done — that you fill with task cards. Drag a card between
-                    columns to move it forward. Every new board comes with
-                    these columns ready to go.
+                    Every project has a board: Backlog, Todo, In Progress, In Review,
+                    Done. Drag a card to move it forward; click a card to open
+                    it, comment, and see its history. Teammates see every move
+                    instantly.
                   </DialogDescription>
-                  {!workspaceId ? (
-                    <p className="mt-1 rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-                      Boards live inside a workspace, so we&apos;ll set one up
-                      first — it only takes a name.
-                    </p>
-                  ) : null}
                 </>
               ) : null}
             </div>
@@ -168,13 +163,15 @@ export function WelcomeTour({
                 {isLast ? (
                   <Button
                     type="button"
-                    onClick={() => finish(() => setCreateOpen(true))}
+                    onClick={() =>
+                      finish(() =>
+                        router.push(projectSlug ? `/w/${slug}/projects/${projectSlug}?new=1` : `/w/${slug}/projects?new=1`),
+                      )
+                    }
                     className="bg-brand text-white hover:bg-brand/90"
                   >
                     <Plus />
-                    {workspaceId
-                      ? "Create your first board"
-                      : "Create a workspace"}
+                    {projectSlug ? "Add your first task" : "Create a project"}
                   </Button>
                 ) : (
                   <Button
@@ -191,15 +188,6 @@ export function WelcomeTour({
         </DialogContent>
       </Dialog>
 
-      {workspaceId ? (
-        <CreateBoardDialog
-          workspaceId={workspaceId}
-          open={createOpen}
-          onOpenChange={setCreateOpen}
-        />
-      ) : (
-        <CreateWorkspaceDialog open={createOpen} onOpenChange={setCreateOpen} />
-      )}
     </>
   )
 }
@@ -261,9 +249,9 @@ function StepArt({ step }: { step: number }) {
     return (
       <div className="flex w-56 flex-col gap-1.5 rounded-xl bg-background/80 p-2 shadow-sm ring-1 ring-border">
         {[
-          { icon: Home, label: "Home", active: true },
-          { icon: Kanban, label: "Boards", active: false },
-          { icon: Users, label: "Team", active: false },
+          { icon: Home, label: "Pulse", active: true },
+          { icon: Kanban, label: "Projects", active: false },
+          { icon: Users, label: "Members", active: false },
         ].map(({ icon: Icon, label, active }) => (
           <div
             key={label}

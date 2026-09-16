@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server"
 
 import type { Database } from "@/lib/supabase/database.types"
 
-const protectedPrefixes = ["/app", "/onboarding"]
+const protectedPrefixes = ["/app", "/w", "/onboarding"]
 const authRoutes = ["/login", "/signup"]
 
 export async function proxy(request: NextRequest) {
@@ -60,5 +60,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/app/:path*", "/onboarding/:path*", "/login", "/signup"],
+  matcher: ["/app/:path*", "/w/:path*", "/onboarding/:path*", "/login", "/signup"],
 }
