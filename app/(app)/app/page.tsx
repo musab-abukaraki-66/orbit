@@ -1,6 +1,7 @@
 import { ArrowUpRight, Boxes, Kanban, Plus } from "lucide-react"
 
 import { requireUser } from "@/lib/auth/session"
+import { hasCompletedOnboardingTour } from "@/lib/onboarding/tour"
 import {
   getBoardCountsByWorkspace,
   getTeamMemberCount,
@@ -10,6 +11,7 @@ import { BoardCard } from "@/components/board-card"
 import { getTaskCountsByBoard } from "@/lib/tasks/data"
 import { CreateBoardDialog } from "@/components/create-board-dialog"
 import { CreateWorkspaceDialog } from "@/components/create-workspace-dialog"
+import { WelcomeTour } from "@/components/onboarding/welcome-tour"
 import { WorkspaceMenu } from "@/components/workspace-menu"
 import { Button } from "@/components/ui/button"
 import {
@@ -36,6 +38,7 @@ export default async function AppHomePage() {
 
   const fullName = String(user.user_metadata?.full_name ?? "").trim()
   const firstName = fullName.split(/\s+/)[0] || "there"
+  const showTour = !hasCompletedOnboardingTour(user)
 
   const stats = [
     { label: "Workspaces", value: String(workspaces.length) },
@@ -45,6 +48,12 @@ export default async function AppHomePage() {
 
   return (
     <div className="flex flex-1 flex-col gap-6">
+      {showTour ? (
+        <WelcomeTour
+          firstName={firstName}
+          workspaceId={activeWorkspace?.id ?? null}
+        />
+      ) : null}
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold tracking-tight">
           Welcome, {firstName}

@@ -13,12 +13,15 @@ export async function getBoardsForWorkspace(workspaceId: string) {
 
 export async function getBoardById(boardId: string) {
   const supabase = await createClient()
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("boards")
     .select("id, name, workspace_id, created_at, updated_at")
     .eq("id", boardId)
     .maybeSingle()
 
+  if (error) {
+    console.error(`getBoardById(${boardId}): ${error.message}`)
+  }
   return data
 }
 

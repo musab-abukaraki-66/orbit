@@ -516,7 +516,9 @@ export function KanbanBoard({
             onDragEnd={handleDragEnd}
             onDragCancel={handleDragCancel}
           >
-            <div className="flex min-h-0 flex-1 items-start gap-4 overflow-x-auto p-1 pb-2">
+            {/* `relative` keeps absolutely-positioned descendants (sr-only labels) inside
+                this scroller; otherwise they escape to <main> and widen the page. */}
+            <div className="relative flex min-h-0 flex-1 items-start gap-4 overflow-x-auto p-1 pb-2">
               {columns.map((column) => (
                 <BoardColumn
                   key={column.id}
