@@ -620,9 +620,13 @@ create trigger comments_after_insert after insert on public.comments
 create or replace function private.notify_from_activity() returns trigger
 language plpgsql security definer set search_path = '' as $$
 declare v_item record; v_uid uuid; v_actor_name text := coalesce(private.profile_name(new.actor_id), 'Someone');
+  v_mentions uuid[] := '{}';
 begin
   if new.work_item_id is null then return new; end if;
   select id, key, title, assignee_id, created_by into v_item from public.work_items where id = new.work_item_id;
+  if new.data ? 'mentions' and jsonb_typeof(new.data -> 'mentions') = 'array' then
+    select coalesce(array_agg(x::uuid), '{}') into v_mentions from jsonb_array_elements_text(new.data -> 'mentions') as x;
+  end if;
 
   if new.action in ('item_created', 'assignee_changed') then
     v_uid := (new.data ->> 'assignee_id')::uuid;
@@ -642,14 +646,13 @@ begin
   elsif new.action = 'comment_added' then
     for v_uid in select distinct u from unnest(array[v_item.assignee_id, v_item.created_by]) as u
       where u is not null and u <> coalesce(new.actor_id, '00000000-0000-0000-0000-000000000000')
-        and not (u = any (coalesce((select array(select jsonb_array_elements_text(new.data -> 'mentions'))::uuid[]), '{}')))
+        and not (u = any (v_mentions))
     loop
       insert into public.notifications (user_id, workspace_id, kind, actor_id, work_item_id, project_id, comment_id, title, body)
       values (v_uid, new.workspace_id, 'commented', new.actor_id, new.work_item_id, new.project_id, new.comment_id,
         v_actor_name || ' commented on ' || v_item.key, new.data ->> 'excerpt');
     end loop;
-    for v_uid in select (jsonb_array_elements_text(new.data -> 'mentions'))::uuid
-    loop
+    foreach v_uid in array v_mentions loop
       if v_uid <> coalesce(new.actor_id, '00000000-0000-0000-0000-000000000000') then
         insert into public.notifications (user_id, workspace_id, kind, actor_id, work_item_id, project_id, comment_id, title, body)
         values (v_uid, new.workspace_id, 'mentioned', new.actor_id, new.work_item_id, new.project_id, new.comment_id,
@@ -793,7 +796,7 @@ create or replace function public.seed_sample_project(p_workspace uuid)
 returns uuid language plpgsql security definer set search_path = '' as $$
 declare v_uid uuid := (select auth.uid()); v_team uuid; v_project uuid;
   s_backlog uuid; s_todo uuid; s_prog uuid; s_review uuid; s_done uuid;
-  l_feature uuid; l_design uuid; l_bug uuid; v_item uuid;
+  l_feature uuid; l_design uuid; v_item uuid;
 begin
   if not private.is_ws_member(p_workspace) then raise exception using errcode = 'P0001', message = 'forbidden'; end if;
   select id into v_team from public.teams where workspace_id = p_workspace and is_default;
@@ -804,7 +807,6 @@ begin
   select id into s_done from public.statuses where team_id = v_team and name = 'Done';
   select id into l_feature from public.labels where workspace_id = p_workspace and name = 'Feature';
   select id into l_design from public.labels where workspace_id = p_workspace and name = 'Design';
-  select id into l_bug from public.labels where workspace_id = p_workspace and name = 'Bug';
 
   insert into public.projects (workspace_id, team_id, name, slug, description, lead_id, status, health, created_by, target_date)
   values (p_workspace, v_team, 'Getting started with Orbit', 'getting-started',
@@ -822,12 +824,18 @@ begin
     (v_project, 'Set up your workspace', 'Name, key and members are done. Nice.', s_done, 'medium', v_uid, null),
     (v_project, 'Explore the sample board', 'Cards in Backlog are ideas you have not committed to yet.', s_backlog, 'none', null, null);
 
-  for v_item in select id from public.work_items where project_id = v_project and title in ('Create your first real project', 'Invite your first teammate') loop
-    insert into public.work_item_labels (work_item_id, label_id) values (v_item, l_feature) on conflict do nothing;
-  end loop;
-  for v_item in select id from public.work_items where project_id = v_project and title = 'Review the statuses for your team' loop
-    insert into public.work_item_labels (work_item_id, label_id) values (v_item, l_design) on conflict do nothing;
-  end loop;
+  -- Default labels can be renamed or deleted before a second sample project
+  -- is seeded, so attach them only when they still exist.
+  if l_feature is not null then
+    for v_item in select id from public.work_items where project_id = v_project and title in ('Create your first real project', 'Invite your first teammate') loop
+      insert into public.work_item_labels (work_item_id, label_id) values (v_item, l_feature) on conflict do nothing;
+    end loop;
+  end if;
+  if l_design is not null then
+    for v_item in select id from public.work_items where project_id = v_project and title = 'Review the statuses for your team' loop
+      insert into public.work_item_labels (work_item_id, label_id) values (v_item, l_design) on conflict do nothing;
+    end loop;
+  end if;
   select id into v_item from public.work_items where project_id = v_project and title = 'Open a card and leave a comment';
   insert into public.comments (work_item_id, body) values (v_item, 'Welcome to Orbit! This is what a comment looks like. Mention a teammate with @ to notify them.');
   return v_project;
@@ -955,4 +963,4 @@ create policy invitations_delete on public.invitations for delete to authenticat
 alter table public.work_items replica identity full;
 alter table public.comments replica identity full;
 alter table public.projects replica identity full;
-alter publication supabase_realtime add table public.work_items, public.comments, public.projects, public.notifications, public.activity_log, public.workspace_memberships, public.invitations;
+alter publication supabase_realtime add table public.work_items, public.work_item_labels, public.comments, public.projects, public.notifications, public.activity_log, public.workspace_memberships, public.invitations;

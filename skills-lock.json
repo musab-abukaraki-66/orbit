@@ -7,12 +7,6 @@
       "skillPath": "skills/frontend-design/SKILL.md",
       "computedHash": "93f53fd1c0352d3d7ec17b8f73d7351bf76f4821e55d123c9d2abc2c53ba48e4"
     },
-    "stripe-best-practices": {
-      "source": "stripe/ai",
-      "sourceType": "github",
-      "skillPath": "skills/stripe-best-practices/SKILL.md",
-      "computedHash": "d139def96b6c52c07ffc1054d884bdd6e664d6d455842901470348a6757e6812"
-    },
     "supabase-postgres-best-practices": {
       "source": "supabase/agent-skills",
       "sourceType": "github",

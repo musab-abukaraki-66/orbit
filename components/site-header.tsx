@@ -16,12 +16,10 @@ export function SiteHeader({
   slug,
   unreadCount,
   projects,
-  breadcrumbs,
 }: {
   slug: string
   unreadCount: number
   projects: CommandProject[]
-  breadcrumbs?: { label: string; href?: string }[]
 }) {
   const router = useRouter()
   const [query, setQuery] = React.useState("")
@@ -44,23 +42,6 @@ export function SiteHeader({
     <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b bg-background/95 px-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:px-4">
       <SidebarTrigger className="-ml-1" />
       <Separator orientation="vertical" className="mr-1 data-vertical:h-5" />
-      {breadcrumbs && breadcrumbs.length > 0 ? (
-        <nav aria-label="Breadcrumb" className="hidden min-w-0 items-center gap-1 text-sm md:flex">
-          {breadcrumbs.map((crumb, index) => (
-            <React.Fragment key={`${crumb.label}-${index}`}>
-              {index > 0 ? <span className="text-muted-foreground/60">/</span> : null}
-              {crumb.href ? (
-                <Link href={crumb.href} className="truncate text-muted-foreground hover:text-foreground">
-                  {crumb.label}
-                </Link>
-              ) : (
-                <span className="truncate font-medium">{crumb.label}</span>
-              )}
-            </React.Fragment>
-          ))}
-        </nav>
-      ) : null}
-
       <form
         role="search"
         className="relative ml-auto hidden max-w-xs flex-1 items-center sm:flex"

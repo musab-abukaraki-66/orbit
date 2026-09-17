@@ -19,7 +19,7 @@ export function AiPanel({ open, onOpenChange }: { open: boolean; onOpenChange: (
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="flex w-full flex-col sm:max-w-md">
+      <SheetContent className="flex flex-col data-[side=right]:w-full data-[side=right]:sm:max-w-md">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <Sparkles className="size-4 text-brand" />

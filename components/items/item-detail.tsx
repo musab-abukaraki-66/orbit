@@ -78,6 +78,7 @@ export function ItemDetail(props: ItemDetailProps) {
         subscriptions={[
           { table: "comments", filter: `work_item_id=eq.${item.id}` },
           { table: "work_items", filter: `id=eq.${item.id}` },
+          { table: "work_item_labels", filter: `work_item_id=eq.${item.id}` },
           { table: "activity_log", filter: `work_item_id=eq.${item.id}` },
         ]}
       />

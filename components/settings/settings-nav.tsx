@@ -6,7 +6,7 @@ import { Bell, Building2, CreditCard, ListChecks, Tags, UserRound, Users } from 
 
 import { cn } from "@/lib/utils"
 
-export function SettingsNav({ slug, isAdmin }: { slug: string; isAdmin: boolean }) {
+export function SettingsNav({ slug }: { slug: string }) {
   const pathname = usePathname()
   const base = `/w/${slug}/settings`
   const items = [
@@ -18,7 +18,6 @@ export function SettingsNav({ slug, isAdmin }: { slug: string; isAdmin: boolean 
     { href: `${base}/billing`, label: "Billing", icon: CreditCard },
     { href: `/w/${slug}/profile`, label: "Profile", icon: UserRound },
   ]
-  void isAdmin
   return (
     <nav aria-label="Settings" className="flex gap-1 overflow-x-auto lg:w-52 lg:flex-col">
       {items.map((item) => {

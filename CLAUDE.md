@@ -1,236 +1,40 @@
 # Orbit — Agent Guide
 
-## What this project is
+Orbit is a free, collaborative project-management app for small teams (Next.js 16 App Router + Supabase). `README.md` is the user-facing description and setup guide; this file is the working context for agents. `prd.md` is the original one-paragraph brief and is kept for history only — the product no longer targets Stripe or an AI SDK.
 
-**Orbit** is a team project-management app inspired by Linear. Teams collaborate on tasks across workspaces and Kanban boards. The product spec lives at [`../prd.md`](../prd.md) (repo root, one level above this directory).
+## Product model (v2)
 
-**Current state (2026-09-16, v2):** the product was rebuilt on a greenfield v2 model — see [`README.md`](./README.md) for the feature list and setup. The milestone history below (M1–M9) describes the original board-centric prototype and is kept for context only.
+- **Workspace** (org; slug in the URL; members with roles `owner` / `admin` / `member`; invitations; labels; one workspace key such as `ACME` that numbers tasks `ACME-12`).
+- **Team** — one hidden default team per workspace owns the **statuses** (Backlog / Todo / In Progress / In Review / Done / Canceled by default; each status has a category used for progress).
+- **Projects** — lead, status, health, target date, members, updates. Views (board / list / overview / updates, My work, Pulse) are lenses over the same work items.
+- **Work items** — title, description, status, priority, assignee (must be a workspace member), labels, due date, comments with `@mentions`, activity log, notifications.
+- **AI assistant and Billing are UI previews only.** No AI API, no Stripe, no paid infrastructure. Do not add any.
 
-- **Model:** Workspace (org; members + roles owner/admin/member) → default Team (hidden until >1; owns statuses) → Projects (lead, status, health, updates) → Work items (`KEY-n`, status/priority/assignee/labels/due, comments, activity). Views (board/list/my-work/pulse) are lenses, not containers.
-- **Routing:** `/w/[workspace-slug]/...` (pulse, my-work, inbox, projects/[projectSlug]/{board,list,overview,updates}, items/[key], search, ai, profile, settings/*). `proxy.ts` guards `/w`, `/app`, `/onboarding`.
-- **Data:** single migration `supabase/migrations/20260916200000_v2_schema.sql` (schema, triggers, RPCs, RLS, realtime publication). Types in `lib/supabase/database.types.ts`. Data/actions under `lib/{auth,workspaces,members,projects,items,statuses,notifications,search,profile}`.
-- **Invitations** work without an email service: `create_invitation` RPC → shareable `/invite/<token>` link; signup-then-auto-join; email-match enforced; 14-day expiry; revoke.
-- **Realtime:** Supabase `postgres_changes` — `components/items/board.tsx` (live board) and `components/realtime/use-live-refresh.ts` (debounced `router.refresh()`). Channel topics must be unique per mount (the browser client is a singleton).
-- **AI and Billing are UI-only** (no AI API, no Stripe). Do not add paid infrastructure.
-- **Tests:** `npm run test:e2e` (`e2e/v2-journey.spec.ts`, `e2e/console-audit.spec.ts`) against a running dev server with `E2E_*` vars in `.env.local`.
+## Where things live
 
-All application code and config live in this directory (the directory containing `package.json`).
+| Area | Location |
+|---|---|
+| Routes | `app/page.tsx` (landing), `app/(auth)/*` (login, signup, forgot-password, update-password, onboarding), `app/auth/callback` (recovery links), `app/invite/[token]`, `app/(app)/w/[slug]/**` (pulse, my-work, inbox, projects, items, search, ai, profile, settings/*) |
+| Auth guard | `proxy.ts` (Next.js 16 proxy) protects `/app`, `/w`, `/onboarding`; server components call `requireUser` / `requireWorkspace` |
+| Data + server actions | `lib/{auth,workspaces,members,projects,items,statuses,notifications,search,profile,onboarding}` |
+| Supabase clients | `lib/supabase/{client,server,realtime}.ts`; generated types in `lib/supabase/database.types.ts` |
+| Email | `lib/resend/*` (optional; invitation links always work without it) |
+| Realtime | `components/items/board.tsx` (live board with optimistic drag) and `components/realtime/use-live-refresh.ts` (debounced `router.refresh()`); channel topics must be unique per mount because the browser client is a singleton |
+| Schema | `supabase/migrations/20260916200000_v2_schema.sql` — tables, triggers, RPCs, grants, RLS, realtime publication (the whole schema in one file) |
+| UI | `components/ui/*` (shadcn / Base UI), feature folders under `components/*`, tokens in `app/globals.css` (dark theme by default) |
+| Tests | `e2e/*.spec.ts` (Playwright) — run with `npm run test:e2e` against a dev server and `E2E_*` vars in `.env.local` |
 
-## Product scope (from PRD)
+## Security rules that must not be weakened
 
-| Area | Requirements |
-|------|----------------|
-| Onboarding | Team creation, welcome flow |
-| Workspaces | Multi-workspace support with boards |
-| Boards | Kanban layout with drag-and-drop |
-| People | Team and user management |
-| Billing | Stripe subscriptions (Lite, Pro) |
-| Email | Resend welcome emails |
-| AI | AI SDK-powered features |
-| UI | shadcn/ui, **dark mode default**, light mode toggle |
+- Every table has RLS enabled and anonymous table access is revoked. Role hierarchy, last-owner protection, "assignee must be a member", invitation token hashing and expiry are enforced in Postgres (`private.*` SECURITY DEFINER helpers with `search_path = ''`, triggers, RPCs) — never only in the UI.
+- `public.get_invitation` is the only RPC callable by `anon` (it returns a masked email so the invite page works before sign-in). Everything else requires `authenticated`.
+- The Supabase service-role key is not used anywhere and must never be added to the app or to Vercel.
+- Secrets live in `.env.local` (gitignored). `.env.local.example` lists every variable; nothing prefixed `NEXT_PUBLIC_` may be a secret.
+- Passwords: at least 6 characters with a letter and a number (`lib/auth/password.ts`), enforced on the server for sign-up and password reset.
 
-## Build milestones
+## Conventions
 
-Work in order. Each milestone should be shippable before starting the next.
-
-### M1 — Foundation & design system
-- Install and configure **shadcn/ui** on Tailwind v4
-- App shell: sidebar, header, workspace layout
-- **Dark mode default** with explicit light/dark toggle (class-based, not `prefers-color-scheme` alone)
-- Replace create-next-app boilerplate with Orbit branding
-- **`proxy.ts`** for auth guards and route protection (Next.js 16 pattern)
-- Env var scaffolding (`.env.local.example`)
-
-### M2 — Supabase local & data model
-- Run **Supabase locally via Docker** (`supabase start`)
-- Core schema: users, teams, workspaces, boards, columns, tasks, memberships
-- Row Level Security (RLS) policies for multi-tenant isolation
-- Supabase client helpers (`@/lib/supabase/server`, `@/lib/supabase/client`)
-- Generate TypeScript types from schema
-
-### M3 — Auth & onboarding
-- Supabase Auth (sign up, sign in, sign out)
-- Team creation onboarding flow (first-run after signup)
-- Protected routes via `proxy.ts`
-- **Resend** welcome email on signup (server action or route handler)
-- Basic user profile page
-
-### M4 — Workspaces & boards
-- Create/list/switch workspaces
-- Create/list boards within a workspace
-- Board detail page (empty column shell)
-- Navigation: workspace picker, board list in sidebar
-- CRUD server actions with optimistic UI where appropriate
-
-### M5 — Kanban & drag-and-drop
-- Column model (status lanes) with task cards
-- Task CRUD: title, description, assignee, priority, status
-- Drag-and-drop between columns and reorder within column (`@dnd-kit` or equivalent)
-- Supabase Realtime for live board updates across clients
-- Keyboard-accessible DnD fallbacks
-
-### M6 — Team & user management
-- Invite members by email
-- Roles: owner, admin, member (enforce in RLS)
-- Team settings page
-- Remove/update member roles
-- Pending invite handling
-
-### M7 — Stripe billing
-- **Lite** and **Pro** subscription plans in Stripe
-- Checkout and customer portal
-- Webhook handler for subscription lifecycle
-- Feature gating by plan (board limits, seats, etc. — define in PRD as needed)
-- Billing settings UI
-
-### M8 — AI features
-- Integrate **Vercel AI SDK**
-- Ship at least one user-facing AI workflow (e.g. task description generation, sprint summary)
-- Server-side only for API keys; stream responses to client
-- Respect plan limits (Pro-only if applicable)
-
-### M9 — Polish & production readiness
-- Error boundaries, empty states, loading skeletons
-- E2E smoke tests for critical paths
-- Production Supabase + Stripe + Resend config
-- Performance pass (see `vercel-react-best-practices` skill)
-- Deploy to Vercel
-
-## Tech stack
-
-| Tool | Version / notes |
-|------|-----------------|
-| Next.js | 16.3.0 — App Router, **`proxy.ts`** for middleware-style logic |
-| React | 19.2.8 |
-| TypeScript | ^5, `strict: true` |
-| Tailwind CSS | ^4 |
-| shadcn/ui | To be added (M1) |
-| Supabase | Local Docker first, then hosted |
-| Stripe | Subscriptions (Lite, Pro) |
-| Resend | Transactional email |
-| Vercel AI SDK | AI features |
-| ESLint | ^9 (`eslint-config-next` 16.3.0) |
-
-**Also used today:** Geist fonts via `next/font/google`, PostCSS with `@tailwindcss/postcss`.
-
-## Project structure
-
-```
-Orbit/                      ← repo root; prd.md lives here
-└── orbit/                  ← project root (run all npm commands here)
-    ├── app/
-    │   ├── layout.tsx
-    │   ├── page.tsx
-    │   ├── globals.css
-    │   └── favicon.ico
-    ├── public/
-    ├── .agents/skills/     ← vercel-react-best-practices skill
-    ├── proxy.ts            ← to be added (M1): auth, redirects
-    ├── supabase/           ← to be added (M2): migrations, config
-    ├── components/         ← to be added (M1): shadcn + app components
-    ├── lib/                ← to be added: supabase, stripe, utils
-    ├── next.config.ts
-    ├── tsconfig.json       ← `@/*` → `./*`
-    ├── postcss.config.mjs
-    ├── eslint.config.mjs
-    ├── skills-lock.json
-    ├── AGENTS.md           ← auto-generated by `next dev`
-    ├── CLAUDE.md           ← this file
-    └── package.json
-```
-
-## Development server
-
-From the project root (`orbit/`):
-
-```bash
-npm install          # first time only
-npm run dev          # Next.js dev server → http://localhost:3000
-```
-
-Supabase local (after M2):
-
-```bash
-supabase start       # from orbit/ once supabase/ is initialized
-```
-
-Production:
-
-```bash
-npm run build
-npm run start
-```
-
-## npm scripts
-
-| Script | Command | Purpose |
-|--------|---------|---------|
-| `dev` | `next dev` | Start dev server with HMR |
-| `build` | `next build` | Production build |
-| `start` | `next start` | Serve production build |
-| `lint` | `eslint` | Lint the codebase |
-
-## Integrations (use MCP)
-
-When wiring external services, prefer **MCP tools** where available (Supabase, Stripe, etc.) over guessing API shapes. Read service docs before implementing.
-
-| Service | Env vars (examples) | Notes |
-|---------|---------------------|-------|
-| Supabase | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` | Local URLs from `supabase start` |
-| Stripe | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Webhook route in `app/api/` |
-| Resend | `RESEND_API_KEY` | Send from server only |
-| AI SDK | Provider-specific (e.g. `OPENAI_API_KEY`) | Never expose to client |
-
-## Coding conventions
-
-- **Language:** TypeScript with `strict: true`. Prefer `.tsx` for components.
-- **Imports:** Use `@/` path alias (maps to project root).
-- **Components:** Default-export React function components; named exports for utilities/types.
-- **Server vs client:** Server Components by default. `"use client"` only for hooks, events, browser APIs, DnD.
-- **Data mutations:** Prefer Server Actions; Route Handlers for webhooks and third-party callbacks.
-- **Styling:** Tailwind utilities + shadcn/ui; shared tokens in `app/globals.css`.
-- **Images:** `next/image`; static assets in `public/`.
-- **Scope:** Minimal, focused diffs. Match existing patterns before new abstractions.
-- **Performance:** Follow `.agents/skills/vercel-react-best-practices/` when building React/Next.js features.
-- **Lint:** Run `npm run lint` after substantive edits.
-
-## Important development rules
-
-1. **Next.js 16 differs from older versions.** Read guides in `node_modules/next/dist/docs/` before writing Next.js code. Use `proxy.ts` instead of legacy middleware patterns where applicable.
-2. **Do not edit** `next-env.d.ts`.
-3. **`AGENTS.md` (root)** is auto-generated by `next dev` — commit it with related work.
-4. **Do not commit secrets** — use `.env.local` (gitignored) and `.env.local.example` (committed, no values).
-5. **Only create commits or PRs when explicitly asked.**
-6. **Read `../prd.md`** before implementing product features; do not invent scope beyond it without user confirmation.
-
-## Next.js App Router conventions
-
-- **Routing:** Filesystem-based under `app/`
-  - `(auth)/` route groups for login/signup
-  - `[workspaceSlug]/` for workspace-scoped pages
-  - `[boardId]/` for board views
-- **Layouts:** Nested `layout.tsx` for app shell vs auth pages
-- **Loading/errors:** Colocate `loading.tsx`, `error.tsx`, `not-found.tsx`
-- **proxy.ts:** Central place for session checks, redirects, header injection (M1)
-
-## Tailwind & theming conventions
-
-- **Tailwind v4:** `@import "tailwindcss"` in `globals.css` — no legacy `tailwind.config.js` unless shadcn requires it
-- **shadcn/ui:** Use CLI to add components; keep variants consistent
-- **Dark mode default:** Set `class="dark"` on `<html>` by default; toggle stores preference (localStorage/cookie)
-- **Semantic tokens:** `--background`, `--foreground`, shadcn CSS variables in `@theme inline`
-- **Fonts:** Geist sans/mono via `next/font` in root layout
-
-## Quick reference
-
-| Task | Where |
-|------|-------|
-| Product requirements | `../prd.md` |
-| New page | `app/<route>/page.tsx` |
-| UI components | `components/ui/` (shadcn), `components/` (app) |
-| Supabase clients | `lib/supabase/` |
-| DB migrations | `supabase/migrations/` |
-| Server actions | `app/<feature>/actions.ts` or `lib/actions/` |
-| Webhooks | `app/api/webhooks/<service>/route.ts` |
-| Auth/routing guards | `proxy.ts` |
-| Env template | `.env.local.example` |
+- TypeScript `strict`, `@/` imports, Server Components by default, Server Actions for mutations, `revalidatePath` after writes.
+- Next.js 16 differs from older versions: read `node_modules/next/dist/docs/` before touching routing, `proxy.ts`, metadata or caching APIs. Do not edit `next-env.d.ts`. `AGENTS.md` is auto-generated by `next dev`.
+- Quality gate before handing work back: `npm run lint`, `npm run typecheck`, `npm run build` (also checks that the GSAP landing chunk stays isolated to `/`), and the relevant Playwright suites.
+- Only create commits or pull requests when explicitly asked. Never commit secrets.

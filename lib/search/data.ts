@@ -6,8 +6,10 @@ export type SearchResults = {
   members: { id: string; full_name: string | null; email: string | null }[]
 }
 
+// Escapes LIKE wildcards and drops the characters PostgREST uses to delimit
+// `or()` filters, which would otherwise turn the query into a 400.
 function escapeLike(value: string) {
-  return value.replace(/[%_\\]/g, (m) => `\\${m}`)
+  return value.replace(/[,()]/g, " ").replace(/[%_\\]/g, (m) => `\\${m}`)
 }
 
 export async function searchWorkspace(workspaceId: string, query: string): Promise<SearchResults> {

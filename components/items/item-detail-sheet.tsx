@@ -16,7 +16,7 @@ export function ItemDetailSheet(props: Omit<ItemDetailProps, "onClose">) {
         if (!open) close()
       }}
     >
-      <SheetContent showCloseButton={false} className="w-full gap-0 p-0 sm:max-w-xl">
+      <SheetContent showCloseButton={false} className="gap-0 p-0 data-[side=right]:w-full data-[side=right]:sm:max-w-xl">
         <SheetTitle className="sr-only">
           {props.item.key} {props.item.title}
         </SheetTitle>

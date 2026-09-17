@@ -6,14 +6,14 @@ Built with Next.js 16 (App Router, Server Actions), React 19, Tailwind v4, shadc
 
 ## Features
 
-- **Auth** — email + password sign up / sign in / sign out, forgot / reset password (Supabase Auth recovery links), protected routes, friendly error states.
+- **Auth** — email + password sign up / sign in / sign out (passwords: at least 6 characters with a letter and a number), forgot / reset password (Supabase Auth recovery links), protected routes, friendly error states.
 - **Onboarding** — name your workspace → default team, statuses and labels are created automatically → optional sample project → straight into the app with a short tour.
 - **Workspaces** — switcher, settings, members & roles (owner / admin / member), leave, transfer ownership, delete.
 - **Invitations without an email service** — admins create an invite and get a shareable link. The invitee opens it, signs up (or in) with the invited email, and joins automatically. Links expire after 14 days and can be revoked. If `RESEND_API_KEY` is set the link is also emailed.
 - **Projects** — create / edit / archive, status, health, lead, members, target date, progress, updates. Board, list and overview views.
 - **Tasks** — human-readable keys (`ACME-12`), title, description, status, priority, assignee, labels, due date. Click a card to open the detail sheet (deep-linkable with `?item=KEY`). Comments with `@mentions`, edit/delete, activity timeline.
 - **Kanban** — drag & drop between and within columns (pointer + keyboard), optimistic updates, statuses editable per workspace in settings.
-- **Realtime** — Supabase Realtime keeps boards, lists, members, inbox and Pulse in sync across browsers; resyncs on reconnect and when a tab becomes visible again.
+- **Realtime** — Supabase Realtime (`postgres_changes`) keeps boards, lists, task sheets, labels, members, inbox and Pulse in sync across browsers; resyncs on reconnect and when a tab becomes visible again.
 - **Inbox** — notifications for assignments, mentions, comments, status changes, invitations and new members; mark read.
 - **Pulse, My work, Search, ⌘K command menu.**
 - **AI assistant / Billing** — UI previews only. No AI API and no Stripe are integrated.
@@ -38,9 +38,10 @@ Open <http://localhost:3000>.
 |---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` | browser + server |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | browser + server (safe to expose; RLS protects data) |
-| `NEXT_PUBLIC_SITE_URL` | absolute origin for invite links and emails |
-| `SUPABASE_SERVICE_ROLE_KEY` | **not used by the app**; server-only if you ever add admin scripts |
-| `RESEND_API_KEY` / `RESEND_FROM_EMAIL` | optional (Resend free tier); emails invitation links in addition to showing them — see below |
+| `NEXT_PUBLIC_SITE_URL` | server: absolute origin for auth redirects, invite links, emails and OG metadata |
+| `RESEND_API_KEY` / `RESEND_FROM_EMAIL` | server, optional (Resend free tier); emails invitation links in addition to showing them — see below |
+
+The Supabase service-role key is never used and must not be added to the app or to Vercel.
 
 Security model: every table has RLS enabled; anonymous access to tables is revoked; role hierarchy (owner > admin > member), last-owner protection, invitation token hashing and "assignee must be a member" are enforced in Postgres with `SECURITY DEFINER` helpers and triggers — not only in the UI.
 
@@ -73,12 +74,12 @@ Manual Supabase settings (dashboard → Authentication):
 | `npm run typecheck` | `next typegen` + `tsc --noEmit` |
 | `npm run test:e2e` | Playwright journey (needs `E2E_*` vars in `.env.local` and a running dev server) |
 
-The e2e suite (`e2e/v2-journey.spec.ts`) covers sign-up, onboarding, projects, tasks, drag & drop, comments, settings, invitations, a second browser context joining via link, cross-browser realtime, notifications, mobile overflow, 404 and sign-out. `e2e/console-audit.spec.ts` fails on any browser console error across the main routes.
+The e2e suites: `e2e/v2-journey.spec.ts` covers sign-up, onboarding, projects, tasks, drag & drop, comments, settings, invitations, a second browser context joining via link, cross-browser realtime, notifications, mobile overflow, 404 and sign-out. `e2e/realtime-two-browsers.spec.ts` drives two independent browser contexts (owner + invited member) through create / assign / move / edit / label / comment / delete, offline-reconnect, reload, workspace isolation on the realtime socket and cleanup. `e2e/auth-and-routing.spec.ts` checks sign-up validation, sign-in errors, session persistence, sign-out, route guards, 404s and the auth callback. `e2e/password-recovery.spec.ts` covers the reset flow without a mailbox. `e2e/console-audit.spec.ts` fails on any browser console error across the main routes. They need `E2E_TEST_EMAIL`, `E2E_TEST_PASSWORD` and `E2E_FRIEND_EMAIL` (two throwaway accounts with the same password).
 
 ## Deploying to Vercel
 
 1. Import the GitHub repository into Vercel (framework preset: Next.js).
-2. Add the environment variables above (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SITE_URL=https://<your-domain>`). Do **not** add the service-role key unless a server-only script needs it.
+2. Add the environment variables above (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SITE_URL=https://<your-domain>`, optionally `RESEND_API_KEY` and `RESEND_FROM_EMAIL`). Do **not** add the service-role key.
 3. In Supabase **Authentication → URL Configuration**, set the Site URL to your Vercel domain and add it to the redirect allow-list.
 4. Deploy. CI (`.github/workflows/ci.yml`) runs lint, typecheck and build on every push.
 

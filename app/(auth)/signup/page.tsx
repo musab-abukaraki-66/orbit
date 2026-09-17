@@ -20,7 +20,7 @@ export default async function SignupPage({
           Create your account
         </h1>
         <p className="text-sm text-muted-foreground">
-          Start a team and get your first board up in minutes.
+          Create a workspace, invite your team and see who&apos;s working on what.
         </p>
       </div>
       <SignupForm next={next} />

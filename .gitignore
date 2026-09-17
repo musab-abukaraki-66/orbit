@@ -48,3 +48,6 @@ SUPABASE.md
 /test-results
 /playwright-report
 /e2e/screenshots
+
+# Claude desktop preview config (local)
+/.claude/

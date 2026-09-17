@@ -13,7 +13,7 @@ export default async function SettingsLayout({ children, params }: { children: R
         <p className="text-sm text-muted-foreground">Manage {context.name}, its people and how it works.</p>
       </div>
       <div className="flex flex-col gap-6 lg:flex-row">
-        <SettingsNav slug={slug} isAdmin={context.isAdmin} />
+        <SettingsNav slug={slug} />
         <div className="min-w-0 flex-1">{children}</div>
       </div>
     </div>

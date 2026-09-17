@@ -79,16 +79,6 @@ export async function updateProject(projectId: string, slug: string, _prev: Form
   return { ok: true, message: "Project saved." }
 }
 
-export async function setProjectStatus(projectId: string, slug: string, status: ProjectStatus): Promise<ActionResult> {
-  if (!UUID.test(projectId) || !STATUSES.includes(status)) return { ok: false, message: "Invalid request." }
-  const supabase = await createClient()
-  const { data, error } = await supabase.from("projects").update({ status }).eq("id", projectId).select("id").maybeSingle()
-  if (error) return { ok: false, message: error.message }
-  if (!data) return { ok: false, message: "You can't change this project." }
-  revalidatePath(`/w/${slug}`, "layout")
-  return { ok: true }
-}
-
 export async function archiveProject(projectId: string, slug: string, archived: boolean): Promise<ActionResult> {
   if (!UUID.test(projectId)) return { ok: false, message: "Invalid project." }
   const supabase = await createClient()

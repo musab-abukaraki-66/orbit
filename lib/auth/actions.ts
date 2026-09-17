@@ -55,7 +55,9 @@ export async function signup(_prev: AuthFormState, formData: FormData): Promise<
   const next = safeNext(formData.get("next"))
 
   if (!email || !fullName) return { message: "Please enter your name and email." }
-  if (password.length < 6) return { message: "Your password must be at least 6 characters long." }
+  if (!isValidEmail(email)) return { message: "Please enter a valid email address." }
+  const problem = validateNewPassword(password)
+  if (problem) return { message: problem }
 
   const supabase = await createClient()
   const { data, error } = await supabase.auth.signUp({

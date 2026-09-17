@@ -1,9 +1,10 @@
 "use client"
 
 import Link from "next/link"
-import { useActionState } from "react"
+import { useActionState, useState } from "react"
 
 import { signup, type AuthFormState } from "@/lib/auth/actions"
+import { validateNewPassword } from "@/lib/auth/password"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
@@ -12,16 +13,31 @@ export function SignupForm({ next }: { next?: string }) {
     AuthFormState,
     FormData
   >(signup, undefined)
+  const [clientError, setClientError] = useState<string | null>(null)
+  const error = clientError ?? state?.message
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
+    <form
+      action={formAction}
+      onSubmit={(event) => {
+        const password = String(new FormData(event.currentTarget).get("password") ?? "")
+        const problem = validateNewPassword(password)
+        if (problem) {
+          event.preventDefault()
+          setClientError(problem)
+          return
+        }
+        setClientError(null)
+      }}
+      className="flex flex-col gap-4"
+    >
       {next ? <input type="hidden" name="next" value={next} /> : null}
-      {state?.message ? (
+      {error ? (
         <p
           role="alert"
           className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
         >
-          {state.message}
+          {error}
         </p>
       ) : null}
 
@@ -72,9 +88,10 @@ export function SignupForm({ next }: { next?: string }) {
           type="password"
           autoComplete="new-password"
           minLength={6}
-          placeholder="At least 6 characters"
+          placeholder="At least 6 characters, a letter and a number"
           required
         />
+        <p className="text-xs text-muted-foreground">At least 6 characters, with at least one letter and one number.</p>
       </div>
 
       <Button type="submit" size="lg" disabled={pending} className="w-full">

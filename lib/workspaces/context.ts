@@ -35,13 +35,16 @@ export const getUserWorkspaces = cache(async () => {
 export const getWorkspaceContext = cache(async (slug: string): Promise<WorkspaceContext | null> => {
   const user = await requireUser()
   const supabase = await createClient()
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("workspaces")
     .select("id, name, slug, key, workspace_memberships!inner ( role, user_id )")
     .eq("slug", slug)
     .eq("workspace_memberships.user_id", user.id)
     .maybeSingle()
 
+  // A transport or auth failure must surface as an error (retryable), never
+  // as a 404 for a workspace the user can actually access.
+  if (error) throw new Error(`Could not load the workspace: ${error.message}`)
   if (!data) return null
   const role = data.workspace_memberships[0]?.role ?? "member"
   return {
@@ -66,8 +69,4 @@ export async function redirectToDefaultWorkspace(): Promise<never> {
   const workspaces = await getUserWorkspaces()
   if (workspaces.length === 0) redirect("/onboarding")
   redirect(`/w/${workspaces[0].slug}`)
-}
-
-export function wsPath(slug: string, path = "") {
-  return `/w/${slug}${path}`
 }

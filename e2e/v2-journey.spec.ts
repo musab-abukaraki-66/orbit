@@ -373,7 +373,7 @@ test("second user opens the link, signs up, and joins; realtime works across bro
 
   // Owner sees the new member without reloading (membership realtime).
   await page.goto(`/w/${slug}/settings/members`)
-  await expect(page.getByText("Friend Local")).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByText("Friend Local").first()).toBeVisible({ timeout: 15_000 })
 
   // Realtime board: friend moves a card, owner sees it live.
   await page.goto(`/w/${slug}/projects/${projectSlug}`)

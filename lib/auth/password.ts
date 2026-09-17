@@ -1,6 +1,6 @@
-// Shared password rules for password recovery. Used on the client for
-// instant feedback and again in the server action — the server check is the
-// one that counts.
+// Shared password rules for sign-up and password recovery. Used on the client
+// for instant feedback and again in the server action — the server check is
+// the one that counts.
 
 export const PASSWORD_MIN_LENGTH = 6
 

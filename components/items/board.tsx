@@ -66,6 +66,7 @@ export function Board({ slug, workspaceId, projectId, projectSlug, statuses, ini
   React.useEffect(() => {
     profilesRef.current = profiles
   }, [profiles])
+  const itemIdsRef = React.useRef(new Set<string>())
   const snapshot = React.useRef<ItemPayload[] | null>(null)
   const pendingIds = React.useRef(new Set<string>())
   const queued = React.useRef<Array<() => void>>([])
@@ -97,11 +98,14 @@ export function Board({ slug, workspaceId, projectId, projectSlug, statuses, ini
     setLabels(initialLabels)
   }
 
-  const upsert = React.useCallback((row: ItemPayload) => {
+  // Realtime rows carry no label_ids (labels live in work_item_labels), so a
+  // live UPDATE keeps the labels we already know; label changes themselves
+  // arrive through the work_item_labels subscription below.
+  const upsert = React.useCallback((row: Omit<ItemPayload, "label_ids"> & { label_ids?: string[] }) => {
     liveSeen.current.set(row.id, Date.now())
     setItems((prev) => {
       const index = prev.findIndex((i) => i.id === row.id)
-      if (index === -1) return [...prev, row]
+      if (index === -1) return [...prev, { ...row, label_ids: row.label_ids ?? [] }]
       const existing = prev[index]
       if (existing.version > row.version) return prev
       const next = [...prev]
@@ -121,6 +125,10 @@ export function Board({ slug, workspaceId, projectId, projectSlug, statuses, ini
       else fn()
     }
     let wasDown = false
+    // Label links have no project column, so the subscription is unfiltered
+    // (RLS scopes it to this user's workspaces) and only triggers a debounced
+    // server refresh for links of items on this board.
+    let labelRefresh: ReturnType<typeof setTimeout> | null = null
     const channel = supabase
       .channel(`board-${projectId}-${channelId}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "work_items", filter: `project_id=eq.${projectId}` }, (payload) => {
@@ -129,16 +137,24 @@ export function Board({ slug, workspaceId, projectId, projectSlug, statuses, ini
           if (id) apply(() => remove(id))
           return
         }
-        const row = payload.new as ItemPayload
+        const row = payload.new as Omit<ItemPayload, "label_ids">
         if (pendingIds.current.has(row.id)) return
         if (row.archived_at) {
           apply(() => remove(row.id))
           return
         }
-        apply(() => upsert({ ...row, label_ids: (row as Partial<ItemPayload>).label_ids ?? [] }))
+        apply(() => upsert(row))
         if (payload.eventType === "INSERT" || (row.assignee_id && !profilesRef.current.some((p) => p.id === row.assignee_id))) {
           router.refresh()
         }
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "work_item_labels" }, (payload) => {
+        const link = (payload.eventType === "DELETE" ? payload.old : payload.new) as { work_item_id?: string }
+        if (!link.work_item_id || !itemIdsRef.current.has(link.work_item_id) || labelRefresh) return
+        labelRefresh = setTimeout(() => {
+          labelRefresh = null
+          router.refresh()
+        }, 300)
       })
 
     let cancelled = false
@@ -161,6 +177,7 @@ export function Board({ slug, workspaceId, projectId, projectSlug, statuses, ini
     return () => {
       cancelled = true
       document.removeEventListener("visibilitychange", onVisible)
+      if (labelRefresh) clearTimeout(labelRefresh)
       void supabase.removeChannel(channel)
     }
   }, [projectId, channelId, remove, router, upsert])
@@ -183,6 +200,9 @@ export function Board({ slug, workspaceId, projectId, projectSlug, statuses, ini
   const profilesById = React.useMemo(() => new Map(profiles.map((p) => [p.id, p])), [profiles])
   const labelsById = React.useMemo(() => new Map(labels.map((l) => [l.id, l])), [labels])
   const itemsById = React.useMemo(() => new Map(items.map((i) => [i.id, i])), [items])
+  React.useEffect(() => {
+    itemIdsRef.current = new Set(items.map((i) => i.id))
+  }, [items])
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
