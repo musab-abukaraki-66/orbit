@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { NativeSelect } from "@/components/ui/native-select"
 import { Textarea } from "@/components/ui/textarea"
 
 type Member = { id: string; full_name: string | null; email: string | null }
@@ -76,33 +77,31 @@ export function ProjectFormDialog(props: Props) {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="project-status">Status</Label>
-              <select
+              <NativeSelect
                 id="project-status"
                 name="status"
                 defaultValue={project?.status ?? "planned"}
-                className="h-8 rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring dark:bg-input/30"
               >
                 {(Object.keys(PROJECT_STATUS_META) as ProjectStatus[]).map((value) => (
                   <option key={value} value={value}>
                     {PROJECT_STATUS_META[value].label}
                   </option>
                 ))}
-              </select>
+              </NativeSelect>
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="project-lead">Lead</Label>
-              <select
+              <NativeSelect
                 id="project-lead"
                 name="lead_id"
                 defaultValue={project?.lead_id ?? currentUserId}
-                className="h-8 rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring dark:bg-input/30"
               >
                 {members.map((member) => (
                   <option key={member.id} value={member.id}>
                     {memberLabel(member)}
                   </option>
                 ))}
-              </select>
+              </NativeSelect>
             </div>
           </div>
           <div className="flex flex-col gap-1.5">

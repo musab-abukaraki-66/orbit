@@ -4,6 +4,7 @@ import * as React from "react"
 import { useRouter } from "next/navigation"
 
 import { createClient } from "@/lib/supabase/client"
+import { ensureRealtimeAuth } from "@/lib/supabase/realtime"
 
 type Subscription = { table: string; filter?: string }
 
@@ -37,9 +38,13 @@ export function useLiveRefresh(subscriptions: Subscription[], channelKey: string
       )
     }
     let wasDisconnected = false
-    channel.subscribe((status) => {
-      if (status === "SUBSCRIBED" && wasDisconnected) schedule()
-      if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") wasDisconnected = true
+    let cancelled = false
+    void ensureRealtimeAuth(supabase).then(() => {
+      if (cancelled) return
+      channel.subscribe((status) => {
+        if (status === "SUBSCRIBED" && wasDisconnected) schedule()
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") wasDisconnected = true
+      })
     })
 
     const onVisible = () => {
@@ -48,6 +53,7 @@ export function useLiveRefresh(subscriptions: Subscription[], channelKey: string
     document.addEventListener("visibilitychange", onVisible)
 
     return () => {
+      cancelled = true
       document.removeEventListener("visibilitychange", onVisible)
       if (timer.current) clearTimeout(timer.current)
       timer.current = null

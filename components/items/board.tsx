@@ -22,8 +22,9 @@ import { Plus, Wifi, WifiOff } from "lucide-react"
 import { moveItem } from "@/lib/items/actions"
 import type { ItemPayload, LabelRow, ProfileLite, StatusRow } from "@/lib/items/types"
 import { createClient } from "@/lib/supabase/client"
+import { ensureRealtimeAuth } from "@/lib/supabase/realtime"
 import { cn } from "@/lib/utils"
-import { ItemCard } from "@/components/items/item-card"
+import { CurrentUserContext, ItemCard } from "@/components/items/item-card"
 import { ItemCreateDialog } from "@/components/items/item-create-dialog"
 import { StatusDot } from "@/components/items/meta"
 import { Alert } from "@/components/ui/alert"
@@ -41,13 +42,14 @@ type Props = {
   commentCounts: Record<string, number>
   openCreate?: boolean
   filterAssignee?: string | null
+  currentUserId?: string | null
 }
 
 function byPosition(a: ItemPayload, b: ItemPayload) {
   return a.position - b.position || a.created_at.localeCompare(b.created_at)
 }
 
-export function Board({ slug, workspaceId, projectId, projectSlug, statuses, initialItems, labels: initialLabels, profiles, commentCounts, openCreate, filterAssignee }: Props) {
+export function Board({ slug, workspaceId, projectId, projectSlug, statuses, initialItems, labels: initialLabels, profiles, commentCounts, openCreate, filterAssignee, currentUserId = null }: Props) {
   const router = useRouter()
   const [items, setItems] = React.useState<ItemPayload[]>(initialItems)
   const [labels, setLabels] = React.useState(initialLabels)
@@ -68,9 +70,26 @@ export function Board({ slug, workspaceId, projectId, projectSlug, statuses, ini
   const pendingIds = React.useRef(new Set<string>())
   const queued = React.useRef<Array<() => void>>([])
 
-  // Server props are authoritative after every router.refresh().
+  // Server props arrive after every router.refresh(), but a refresh that
+  // started before a live change can land after it. Merge by version so a
+  // stale render never regresses a row the realtime channel already updated,
+  // and keep rows that only arrived live recently.
+  const liveSeen = React.useRef(new Map<string, number>())
   React.useEffect(() => {
-    if (!dragging.current) setItems(initialItems)
+    if (dragging.current) return
+    setItems((prev) => {
+      const local = new Map(prev.map((i) => [i.id, i]))
+      const merged = initialItems.map((row) => {
+        const mine = local.get(row.id)
+        return mine && mine.version > row.version ? mine : row
+      })
+      const known = new Set(initialItems.map((i) => i.id))
+      const cutoff = Date.now() - 60_000
+      for (const item of prev) {
+        if (!known.has(item.id) && (liveSeen.current.get(item.id) ?? 0) > cutoff) merged.push(item)
+      }
+      return merged
+    })
   }, [initialItems])
   const [seenLabels, setSeenLabels] = React.useState(initialLabels)
   if (seenLabels !== initialLabels) {
@@ -79,6 +98,7 @@ export function Board({ slug, workspaceId, projectId, projectSlug, statuses, ini
   }
 
   const upsert = React.useCallback((row: ItemPayload) => {
+    liveSeen.current.set(row.id, Date.now())
     setItems((prev) => {
       const index = prev.findIndex((i) => i.id === row.id)
       if (index === -1) return [...prev, row]
@@ -89,7 +109,10 @@ export function Board({ slug, workspaceId, projectId, projectSlug, statuses, ini
       return next
     })
   }, [])
-  const remove = React.useCallback((id: string) => setItems((prev) => prev.filter((i) => i.id !== id)), [])
+  const remove = React.useCallback((id: string) => {
+    liveSeen.current.delete(id)
+    setItems((prev) => prev.filter((i) => i.id !== id))
+  }, [])
 
   React.useEffect(() => {
     const supabase = createClient()
@@ -117,7 +140,11 @@ export function Board({ slug, workspaceId, projectId, projectSlug, statuses, ini
           router.refresh()
         }
       })
-      .subscribe((status) => {
+
+    let cancelled = false
+    void ensureRealtimeAuth(supabase).then(() => {
+      if (cancelled) return
+      channel.subscribe((status) => {
         if (status === "SUBSCRIBED") {
           setLive("live")
           if (wasDown) router.refresh()
@@ -126,11 +153,13 @@ export function Board({ slug, workspaceId, projectId, projectSlug, statuses, ini
           setLive("error")
         }
       })
+    })
     const onVisible = () => {
       if (document.visibilityState === "visible") router.refresh()
     }
     document.addEventListener("visibilitychange", onVisible)
     return () => {
+      cancelled = true
       document.removeEventListener("visibilitychange", onVisible)
       void supabase.removeChannel(channel)
     }
@@ -259,6 +288,7 @@ export function Board({ slug, workspaceId, projectId, projectSlug, statuses, ini
   const createStatus = createFor ? statuses.find((s) => s.id === createFor) ?? null : null
 
   return (
+    <CurrentUserContext.Provider value={currentUserId}>
     <div className="flex min-h-0 flex-1 flex-col gap-3">
       <div className="flex items-center justify-between gap-3">
         <p className="hidden text-xs text-muted-foreground sm:block">Drag cards between columns. Click a card to open it.</p>
@@ -331,6 +361,7 @@ export function Board({ slug, workspaceId, projectId, projectSlug, statuses, ini
         }}
       />
     </div>
+    </CurrentUserContext.Provider>
   )
 
 }

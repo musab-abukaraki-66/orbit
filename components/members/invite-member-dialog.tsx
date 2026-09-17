@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { NativeSelect } from "@/components/ui/native-select"
 
 export function InviteMemberDialog({ workspaceId, slug, role, autoOpen = false }: { workspaceId: string; slug: string; role: string; autoOpen?: boolean }) {
   const [open, setOpen] = React.useState(autoOpen)
@@ -75,10 +76,10 @@ export function InviteMemberDialog({ workspaceId, slug, role, autoOpen = false }
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="invite-role">Role</Label>
-              <select id="invite-role" name="role" defaultValue="member" className="h-8 rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring dark:bg-input/30">
+              <NativeSelect id="invite-role" name="role" defaultValue="member">
                 <option value="member">Member — can work on all projects</option>
                 {role === "owner" || role === "admin" ? <option value="admin">Admin — can also manage members and settings</option> : null}
-              </select>
+              </NativeSelect>
             </div>
             {state?.ok === false ? <Alert>{state.message}</Alert> : null}
             <DialogFooter>

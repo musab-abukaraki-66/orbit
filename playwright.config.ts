@@ -14,8 +14,9 @@ if (existsSync(".env.local")) {
 
 export default defineConfig({
   testDir: "./e2e",
-  timeout: 90_000,
-  expect: { timeout: 10_000 },
+  timeout: 150_000,
+  // The dev DB is in ap-southeast-1; page renders can take several seconds on a slow link.
+  expect: { timeout: 20_000 },
   fullyParallel: false,
   workers: 1,
   retries: 0,

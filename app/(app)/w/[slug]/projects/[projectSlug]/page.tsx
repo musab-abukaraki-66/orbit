@@ -66,6 +66,7 @@ export default async function ProjectBoardPage({ params, searchParams }: Props) 
         commentCounts={commentCounts}
         openCreate={openNew === "1"}
         filterAssignee={assignee ?? null}
+        currentUserId={context.userId}
       />
       <ItemSheetLoader context={context} itemKey={itemKey} />
     </div>

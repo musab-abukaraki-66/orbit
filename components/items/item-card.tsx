@@ -1,5 +1,6 @@
 "use client"
 
+import * as React from "react"
 import { CalendarDays, MessageSquare } from "lucide-react"
 
 import { isOverdue, type ItemPayload, type LabelRow, type ProfileLite } from "@/lib/items/types"
@@ -7,6 +8,10 @@ import { memberLabel } from "@/lib/members/format"
 import { cn } from "@/lib/utils"
 import { formatShortDate, LabelChip, PriorityIcon } from "@/components/items/meta"
 import { UserAvatar } from "@/components/user-avatar"
+
+// Lets cards know who is looking so "assigned to you" can stand out
+// without threading the user id through every board layer.
+export const CurrentUserContext = React.createContext<string | null>(null)
 
 export function ItemCard({
   item,
@@ -25,8 +30,11 @@ export function ItemCard({
   className?: string
   dragging?: boolean
 }) {
+  const currentUserId = React.useContext(CurrentUserContext)
   const overdue = isOverdue(item)
   const due = formatShortDate(item.due_date)
+  const mine = Boolean(assignee && currentUserId && assignee.id === currentUserId)
+  const assigneeName = assignee ? memberLabel(assignee) : null
   return (
     <div
       role={onOpen ? "button" : undefined}
@@ -73,10 +81,16 @@ export function ItemCard({
             </span>
           ) : null}
         </div>
-        {assignee ? (
-          <UserAvatar name={memberLabel(assignee)} avatarUrl={assignee.avatar_url} className="size-5" fallbackClassName="text-[9px]" />
+        {assignee && assigneeName ? (
+          <span
+            className={cn("flex min-w-0 items-center gap-1 rounded-full pr-1.5 pl-0.5 text-[11px]", mine ? "bg-brand/15 text-brand" : "text-muted-foreground")}
+            title={mine ? "Assigned to you" : `Assigned to ${assigneeName}`}
+          >
+            <UserAvatar name={assigneeName} avatarUrl={assignee.avatar_url} className={cn("size-5", mine && "ring-1 ring-brand")} fallbackClassName="text-[9px]" />
+            <span className="max-w-20 truncate">{mine ? "You" : assigneeName.split(" ")[0]}</span>
+          </span>
         ) : (
-          <span className="size-5 rounded-full border border-dashed border-border" aria-label="Unassigned" />
+          <span className="size-5 rounded-full border border-dashed border-border" title="Unassigned" aria-label="Unassigned" />
         )}
       </div>
     </div>

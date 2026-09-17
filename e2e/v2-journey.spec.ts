@@ -292,6 +292,37 @@ test("invite a teammate and get a shareable link", async () => {
   await expect(page.getByText(FRIEND_EMAIL).first()).toBeVisible()
 })
 
+test("revoked invitation link stops working; wrong-email account is refused", async ({ browser }) => {
+  await page.goto(`/w/${slug}/settings/members`)
+  const throwaway = `revoke.${Date.now().toString(36)}@example.com`
+  await page.getByRole("button", { name: "Invite people" }).click()
+  const dialog = page.getByRole("dialog")
+  await dialog.getByLabel("Email address").fill(throwaway)
+  await dialog.getByRole("button", { name: "Create invitation" }).click()
+  const revokedLink = await dialog.getByLabel("Invitation link").inputValue()
+  await dialog.getByRole("button", { name: "Done" }).click()
+  const row = page.locator("li", { hasText: throwaway })
+  await expect(row).toBeVisible()
+  await row.getByRole("button", { name: "Revoke" }).click()
+  await expect(page.getByText(throwaway)).toHaveCount(0)
+
+  // Logged-out visitor with the revoked link.
+  const ctx = await browser.newContext()
+  const p = await ctx.newPage()
+  await p.goto(revokedLink)
+  await expect(p.getByText(/revoked|isn't valid/i).first()).toBeVisible()
+  await expect(p.getByRole("button", { name: "Accept invitation" })).toHaveCount(0)
+  // A tampered token is refused too.
+  await p.goto(revokedLink.slice(0, -4) + "0000")
+  await expect(p.getByText(/isn't valid/i).first()).toBeVisible()
+  await ctx.close()
+
+  // The owner (wrong email) cannot accept the friend's pending invitation.
+  await page.goto(inviteLink)
+  await expect(page.getByText(/different email/i)).toBeVisible()
+  await expect(page.getByRole("button", { name: "Accept invitation" })).toHaveCount(0)
+})
+
 test("second user opens the link, signs up, and joins; realtime works across browsers", async ({ browser }) => {
   const friendContext: BrowserContext = await browser.newContext()
   const friend = await friendContext.newPage()
@@ -335,8 +366,8 @@ test("second user opens the link, signs up, and joins; realtime works across bro
   const toLane = fromLane === "In Review" ? "In Progress" : "In Review"
   await dragToLane(friend, title, fromLane, toLane)
   await expect(column(friend, toLane).getByText(title, { exact: true })).toBeVisible()
-  const arrived = await column(page, toLane).getByText(title, { exact: true }).waitFor({ state: "visible", timeout: 15_000 }).then(() => true).catch(() => false)
-  if (!arrived) note("BUG: realtime move not received by the other browser within 15s")
+  const arrived = await column(page, toLane).getByText(title, { exact: true }).waitFor({ state: "visible", timeout: 30_000 }).then(() => true).catch(() => false)
+  if (!arrived) note("BUG: realtime move not received by the other browser within 30s")
   expect(arrived).toBe(true)
   await shot(page, "v2-15-realtime-owner-view")
 
@@ -360,9 +391,57 @@ test("second user opens the link, signs up, and joins; realtime works across bro
   await expect(page.getByText(/assigned you/).first()).toBeVisible()
   await shot(page, "v2-16-inbox")
 
-  // Member cannot see workspace admin-only invitations; can leave.
+  // Member POV: no invite, no member management, read-only workspace settings,
+  // no status/label editing, own work visible.
   await friend.goto(`/w/${slug}/settings/members`)
+  await expect(friend.getByText("Demo Local")).toBeVisible()
   expect(await friend.getByRole("button", { name: "Invite people" }).count()).toBe(0)
+  expect(await friend.getByRole("button", { name: /^Manage / }).count()).toBe(0)
+  expect(await friend.getByText("Pending invitations").count()).toBe(0)
+  await friend.goto(`/w/${slug}/settings`)
+  await expect(friend.locator("#ws-name")).toBeDisabled()
+  expect(await friend.getByRole("button", { name: "Save changes" }).count()).toBe(0)
+  expect(await friend.getByRole("button", { name: "Delete everything" }).count()).toBe(0)
+  await friend.goto(`/w/${slug}/settings/statuses`)
+  expect(await friend.getByText("Add a status").count()).toBe(0)
+  await friend.goto(`/w/${slug}/settings/labels`)
+  // Members may add labels while working; only admins rename/recolor/delete them.
+  expect(await friend.getByLabel("Label name").count()).toBe(0)
+  await friend.goto(`/w/${slug}/my-work`)
+  await expect(friend.getByRole("heading", { name: "My work" })).toBeVisible()
+  await shot(friend, "v2-17-member-settings")
+
+  // Isolation: owner creates a second workspace; the member cannot open it.
+  await page.goto("/onboarding?new=1")
+  await page.getByLabel("Workspace name").fill(`Private Space ${Date.now().toString(36)}`)
+  await page.getByRole("button", { name: "Create workspace" }).click()
+  await page.waitForURL(/\/w\/[^/?]+/)
+  const otherSlug = page.url().match(/\/w\/([^/?#]+)/)![1]
+  expect(otherSlug).not.toBe(slug)
+  await friend.goto(`/w/${otherSlug}`)
+  await expect(friend.getByText(/not found|drifted/i).first()).toBeVisible()
+  await friend.goto(`/w/${otherSlug}/settings/members`)
+  await expect(friend.getByText(/not found|drifted/i).first()).toBeVisible()
+  // The member's switcher only lists their own workspace.
+  await friend.goto(`/w/${slug}`)
+  await friend.getByRole("button", { name: new RegExp(WORKSPACE) }).first().click()
+  expect(await friend.getByRole("menuitem", { name: /Private Space/ }).count()).toBe(0)
+  await friend.keyboard.press("Escape")
+  // Clean up the extra workspace (owner-only delete).
+  await page.goto(`/w/${otherSlug}/settings`)
+  await page.getByRole("button", { name: "Delete workspace" }).click()
+  await page.getByRole("dialog").getByRole("button", { name: "Delete everything" }).click()
+  await page.waitForURL((u) => !u.pathname.includes(otherSlug))
+
+  // Admin removes the member; the member loses access immediately.
+  await page.goto(`/w/${slug}/settings/members`)
+  await page.getByRole("button", { name: "Manage Friend Local" }).click()
+  await page.getByRole("menuitem", { name: "Remove from workspace" }).click()
+  await page.getByRole("dialog").getByRole("button", { name: "Remove", exact: true }).click()
+  await expect(page.getByText("Friend Local")).toHaveCount(0)
+  await friend.goto(`/w/${slug}`)
+  await expect(friend.getByText(/not found|drifted|no workspace/i).first()).toBeVisible({ timeout: 15_000 })
+  await shot(page, "v2-18-member-removed")
   await friendContext.close()
 })
 

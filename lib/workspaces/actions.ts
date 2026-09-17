@@ -48,16 +48,25 @@ export async function updateWorkspace(workspaceId: string, _prev: FormState, for
     .eq("id", workspaceId)
     .select("slug")
     .maybeSingle()
-  if (error) return { ok: false, message: error.message }
+  if (error) return { ok: false, message: friendly(error.message, "Could not update the workspace.") }
   if (!data) return { ok: false, message: "You don't have permission to rename this workspace." }
   revalidatePath(`/w/${data.slug}`, "layout")
   return { ok: true, message: "Workspace updated." }
 }
 
+const DB_MESSAGES: Record<string, string> = {
+  last_owner: "Transfer ownership to someone else first — a workspace always needs an owner.",
+  forbidden: "You don't have permission to do that.",
+}
+
+function friendly(message: string, fallback: string) {
+  return DB_MESSAGES[message] ?? (/^[a-z_]+$/.test(message) ? fallback : message)
+}
+
 export async function deleteWorkspace(workspaceId: string): Promise<FormState> {
   const supabase = await createClient()
   const { data, error } = await supabase.from("workspaces").delete().eq("id", workspaceId).select("id").maybeSingle()
-  if (error) return { ok: false, message: error.message }
+  if (error) return { ok: false, message: friendly(error.message, "Could not delete the workspace.") }
   if (!data) return { ok: false, message: "Only the workspace owner can delete it." }
   revalidatePath("/", "layout")
   redirect("/app")

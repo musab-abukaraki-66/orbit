@@ -11,6 +11,7 @@ import { StatusDot } from "@/components/items/meta"
 import { Alert } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { NativeSelect } from "@/components/ui/native-select"
 
 const CATEGORIES = Object.keys(CATEGORY_LABEL) as StatusCategory[]
 
@@ -72,11 +73,11 @@ export function StatusesEditor({ slug, teamId, statuses, usage, canEdit }: { slu
           <p className="text-sm font-medium">Add a status</p>
           <div className="flex flex-wrap items-center gap-2">
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Blocked, QA, Shipped" className="h-8 w-56" required maxLength={40} />
-            <select value={category} onChange={(e) => setCategory(e.target.value as StatusCategory)} className="h-8 rounded-lg border border-input bg-background px-2 text-sm dark:bg-input/30" aria-label="Category">
+            <NativeSelect value={category} onChange={(e) => setCategory(e.target.value as StatusCategory)} aria-label="Category">
               {CATEGORIES.map((c) => (
                 <option key={c} value={c}>{CATEGORY_LABEL[c]}</option>
               ))}
-            </select>
+            </NativeSelect>
             <div className="flex gap-1" role="radiogroup" aria-label="Color">
               {COLOR_NAMES.slice(0, 10).map((c) => (
                 <button key={c} type="button" role="radio" aria-checked={c === color} aria-label={c} onClick={() => setColor(c)} className={cn("size-5 rounded-full ring-offset-2 ring-offset-background", swatchClass(c), c === color && "ring-2 ring-foreground")} />
@@ -135,11 +136,11 @@ function StatusRowEditor({
         <span className="w-40 text-sm font-medium">{status.name}</span>
       )}
       {canEdit ? (
-        <select value={status.category} onChange={(e) => onSave({ category: e.target.value as StatusCategory })} className="h-7 rounded-md border border-input bg-background px-1.5 text-xs dark:bg-input/30" aria-label="Category">
+        <NativeSelect value={status.category} onChange={(e) => onSave({ category: e.target.value as StatusCategory })} className="h-7 rounded-md px-1.5 text-xs" aria-label="Category">
           {CATEGORIES.map((c) => (
             <option key={c} value={c}>{CATEGORY_LABEL[c]}</option>
           ))}
-        </select>
+        </NativeSelect>
       ) : (
         <span className="text-xs text-muted-foreground">{CATEGORY_LABEL[status.category]}</span>
       )}

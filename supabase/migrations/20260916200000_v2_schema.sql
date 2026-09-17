@@ -410,7 +410,10 @@ begin
   if tg_op = 'UPDATE' and (new.user_id <> old.user_id or new.workspace_id <> old.workspace_id) then
     raise exception 'membership identity is immutable';
   end if;
-  if old.role = 'owner' and (tg_op = 'DELETE' or new.role <> 'owner') then
+  -- When the workspace itself is being deleted (cascade), the row is already
+  -- gone and the last-owner rule must not block the cascade.
+  if old.role = 'owner' and (tg_op = 'DELETE' or new.role <> 'owner')
+     and exists (select 1 from public.workspaces w where w.id = old.workspace_id) then
     select count(*) into v_others from public.workspace_memberships
     where workspace_id = old.workspace_id and user_id <> old.user_id and role = 'owner';
     if v_others = 0 then
