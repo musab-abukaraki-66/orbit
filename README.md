@@ -40,9 +40,18 @@ Open <http://localhost:3000>.
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | browser + server (safe to expose; RLS protects data) |
 | `NEXT_PUBLIC_SITE_URL` | absolute origin for invite links and emails |
 | `SUPABASE_SERVICE_ROLE_KEY` | **not used by the app**; server-only if you ever add admin scripts |
-| `RESEND_API_KEY` / `RESEND_FROM_EMAIL` | optional; emails invite links in addition to showing them |
+| `RESEND_API_KEY` / `RESEND_FROM_EMAIL` | optional (Resend free tier); emails invitation links in addition to showing them — see below |
 
 Security model: every table has RLS enabled; anonymous access to tables is revoked; role hierarchy (owner > admin > member), last-owner protection, invitation token hashing and "assignee must be a member" are enforced in Postgres with `SECURITY DEFINER` helpers and triggers — not only in the UI.
+
+### Email (optional, free)
+
+Orbit never depends on email: every invitation is a link you can copy. With a free [Resend](https://resend.com) API key it also emails the link, and pending invitations get a **Resend email** button (which issues a fresh link and revokes the old one).
+
+1. Resend → API Keys → create a key → put it in `RESEND_API_KEY` locally and on Vercel.
+2. Free tier without a verified domain only delivers to the Resend account's own email address, from `onboarding@resend.dev`. Verify a domain in Resend (free) to email anyone, then set `RESEND_FROM_EMAIL` to an address on that domain.
+3. If delivery fails, the UI says why and still shows the link.
+4. Optional: route Supabase Auth's own emails (password reset, confirmation) through the same account — Supabase dashboard → Authentication → SMTP Settings → custom SMTP: host `smtp.resend.com`, port `465`, user `resend`, password = the API key, sender = your verified address.
 
 ## Scripts
 

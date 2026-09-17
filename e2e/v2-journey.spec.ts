@@ -303,8 +303,17 @@ test("revoked invitation link stops working; wrong-email account is refused", as
   await dialog.getByRole("button", { name: "Done" }).click()
   const row = page.locator("li", { hasText: throwaway })
   await expect(row).toBeVisible()
-  await row.getByRole("button", { name: "Revoke" }).click()
-  await expect(page.getByText(throwaway)).toHaveCount(0)
+  // Reissue: a fresh link replaces the old one.
+  await row.getByRole("button", { name: /New link|Resend email/ }).click()
+  const fresh = page.getByLabel("New invitation link")
+  await expect(fresh).toBeVisible()
+  const freshLink = await fresh.inputValue()
+  expect(freshLink).toMatch(/\/invite\/[a-f0-9]{48}$/)
+  expect(freshLink).not.toBe(revokedLink)
+  await page.reload()
+  await expect(page.locator("li", { hasText: throwaway })).toHaveCount(1)
+  await page.locator("li", { hasText: throwaway }).getByRole("button", { name: "Revoke" }).click()
+  await expect(page.locator("li", { hasText: throwaway })).toHaveCount(0)
 
   // Logged-out visitor with the revoked link.
   const ctx = await browser.newContext()
@@ -315,6 +324,8 @@ test("revoked invitation link stops working; wrong-email account is refused", as
   // A tampered token is refused too.
   await p.goto(revokedLink.slice(0, -4) + "0000")
   await expect(p.getByText(/isn't valid/i).first()).toBeVisible()
+  await p.goto(freshLink)
+  await expect(p.getByText(/revoked|isn't valid/i).first()).toBeVisible()
   await ctx.close()
 
   // The owner (wrong email) cannot accept the friend's pending invitation.

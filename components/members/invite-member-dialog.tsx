@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { NativeSelect } from "@/components/ui/native-select"
 
-export function InviteMemberDialog({ workspaceId, slug, role, autoOpen = false }: { workspaceId: string; slug: string; role: string; autoOpen?: boolean }) {
+export function InviteMemberDialog({ workspaceId, slug, role, autoOpen = false, emailConfigured = false }: { workspaceId: string; slug: string; role: string; autoOpen?: boolean; emailConfigured?: boolean }) {
   const [open, setOpen] = React.useState(autoOpen)
   const [state, formAction, pending] = useActionState<InviteState, FormData>(inviteMember.bind(null, workspaceId, slug), undefined)
   const [copied, setCopied] = React.useState(false)
@@ -43,15 +43,22 @@ export function InviteMemberDialog({ workspaceId, slug, role, autoOpen = false }
           <DialogHeader>
             <DialogTitle>Invite a teammate</DialogTitle>
             <DialogDescription>
-              Enter their email and we&apos;ll create a private invitation link. Share the link however you like — chat, email, text. No mail server required.
+              {emailConfigured
+                ? "Enter their email. We'll email them a private invitation link and show it here too, so you can share it another way."
+                : "Enter their email and we'll create a private invitation link. Share the link however you like — chat, email, text. No mail server required."}
             </DialogDescription>
           </DialogHeader>
 
           {state?.ok ? (
             <div className="flex flex-col gap-3">
               <Alert variant="success">
-                Invitation ready for <strong>{state.email}</strong>.{state.emailed ? " We also emailed it to them." : " Copy the link below and send it to them."}
+                Invitation ready for <strong>{state.email}</strong>.{state.emailed ? " Email sent — they can also use the link below." : " Copy the link below and send it to them."}
               </Alert>
+              {state.emailError ? (
+                <Alert variant="warning">
+                  Email not delivered: {state.emailError} Share the link instead.
+                </Alert>
+              ) : null}
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="invite-link">Invitation link</Label>
                 <div className="flex gap-2">

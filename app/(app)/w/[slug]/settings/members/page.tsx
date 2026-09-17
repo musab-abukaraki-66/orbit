@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 
 import { getPendingInvitations, getWorkspaceMembers } from "@/lib/members/data"
+import { isEmailConfigured } from "@/lib/resend/client"
 import { requireWorkspace } from "@/lib/workspaces/context"
 import { InviteMemberDialog } from "@/components/members/invite-member-dialog"
 import { MembersList } from "@/components/members/members-list"
@@ -15,6 +16,7 @@ export default async function MembersSettingsPage({ params, searchParams }: { pa
   const { invite } = await searchParams
   const context = await requireWorkspace(slug)
   const [members, invitations] = await Promise.all([getWorkspaceMembers(context.id), context.isAdmin ? getPendingInvitations(context.id) : Promise.resolve([])])
+  const emailConfigured = isEmailConfigured()
 
   return (
     <div className="flex flex-col gap-6">
@@ -25,7 +27,7 @@ export default async function MembersSettingsPage({ params, searchParams }: { pa
             <CardTitle>Members</CardTitle>
             <CardDescription>{members.length} {members.length === 1 ? "person" : "people"} in {context.name}. Owners and admins manage members; everyone can work on any project.</CardDescription>
           </div>
-          {context.isAdmin ? <InviteMemberDialog workspaceId={context.id} slug={slug} role={context.role} autoOpen={invite === "1"} /> : null}
+          {context.isAdmin ? <InviteMemberDialog workspaceId={context.id} slug={slug} role={context.role} autoOpen={invite === "1"} emailConfigured={emailConfigured} /> : null}
         </CardHeader>
         <CardContent>
           <MembersList slug={slug} workspaceId={context.id} members={members} currentUserId={context.userId} currentRole={context.role} />
@@ -36,10 +38,10 @@ export default async function MembersSettingsPage({ params, searchParams }: { pa
         <Card>
           <CardHeader>
             <CardTitle>Pending invitations</CardTitle>
-            <CardDescription>Links expire after 14 days. Copy a link to share it again, or revoke it.</CardDescription>
+            <CardDescription>Links expire after 14 days. {emailConfigured ? "Resend the email with a fresh link, or revoke it." : "Revoke an invitation and create a new one to issue a fresh link."}</CardDescription>
           </CardHeader>
           <CardContent>
-            <PendingInvitations slug={slug} invitations={invitations} />
+            <PendingInvitations slug={slug} invitations={invitations} emailConfigured={emailConfigured} />
           </CardContent>
         </Card>
       ) : null}

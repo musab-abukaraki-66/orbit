@@ -12,7 +12,7 @@ import type { Database } from "@/lib/supabase/database.types"
 type Role = Database["public"]["Enums"]["ws_role"]
 
 export type InviteState =
-  | { ok: true; link: string; email: string; emailed: boolean }
+  | { ok: true; link: string; email: string; emailed: boolean; emailError?: string }
   | { ok: false; message: string }
   | undefined
 
@@ -46,29 +46,38 @@ export async function inviteMember(workspaceId: string, slug: string, _prev: Inv
   const { data: ws } = await supabase.from("workspaces").select("name").eq("id", workspaceId).maybeSingle()
   const inviterName = String(user.user_metadata?.full_name ?? user.email ?? "A teammate")
 
-  let emailed = false
-  try {
-    emailed = await sendInvitationEmail({
-      to: email,
-      inviterName,
-      teamName: ws?.name ?? "Orbit",
-      role,
-      acceptUrl: link,
-    })
-  } catch {
-    emailed = false
-  }
+  const delivery = await sendInvitationEmail({ to: email, inviterName, teamName: ws?.name ?? "Orbit", role, acceptUrl: link })
+  const emailed = delivery.sent
+  const emailError = delivery.sent || delivery.reason === "not_configured" ? undefined : delivery.reason
 
   revalidatePath(`/w/${slug}/settings/members`)
-  return { ok: true, link, email, emailed }
+  return { ok: true, link, email, emailed, emailError }
+}
+
+// Re-issues a pending invitation: a fresh token replaces the old one (the
+// old link stops working) and the email goes out again.
+export async function resendInvitationEmail(invitationId: string, slug: string): Promise<InviteState> {
+  if (!UUID.test(invitationId)) return { ok: false, message: "Invalid invitation." }
+  const supabase = await createClient()
+  const { data: invitation } = await supabase
+    .from("invitations")
+    .select("workspace_id, email, role, status")
+    .eq("id", invitationId)
+    .maybeSingle()
+  if (!invitation || invitation.status !== "pending") return { ok: false, message: "That invitation is no longer pending." }
+  const form = new FormData()
+  form.set("email", invitation.email)
+  form.set("role", invitation.role)
+  return inviteMember(invitation.workspace_id, slug, undefined, form)
 }
 
 export async function revokeInvitation(invitationId: string, slug: string): Promise<ActionResult> {
   if (!UUID.test(invitationId)) return { ok: false, message: "Invalid invitation." }
   const supabase = await createClient()
-  const { error } = await supabase.from("invitations").update({ status: "revoked" }).eq("id", invitationId).eq("status", "pending")
+  const { data, error } = await supabase.from("invitations").update({ status: "revoked" }).eq("id", invitationId).eq("status", "pending").select("id").maybeSingle()
   if (error) return { ok: false, message: error.message }
   revalidatePath(`/w/${slug}/settings/members`)
+  if (!data) return { ok: false, message: "That invitation was already revoked or replaced — the list has been refreshed." }
   return { ok: true }
 }
 
