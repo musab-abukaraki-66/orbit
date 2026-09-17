@@ -82,3 +82,12 @@ export async function signout() {
   await supabase.auth.signOut()
   redirect("/login")
 }
+
+// Sign out and come back to a specific page (e.g. an invitation link) so the
+// person can sign in with a different account. Only same-site paths.
+export async function switchAccount(formData: FormData) {
+  const next = safeNext(String(formData.get("next") ?? ""))
+  const supabase = await createClient()
+  await supabase.auth.signOut()
+  redirect(`/login${next ? `?next=${encodeURIComponent(next)}` : ""}`)
+}

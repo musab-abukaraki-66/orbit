@@ -332,6 +332,14 @@ test("revoked invitation link stops working; wrong-email account is refused", as
   await page.goto(inviteLink)
   await expect(page.getByText(/different email/i)).toBeVisible()
   await expect(page.getByRole("button", { name: "Accept invitation" })).toHaveCount(0)
+  // "Switch account" signs out and returns to the invite after login.
+  await page.getByRole("button", { name: "Switch account" }).click()
+  await page.waitForURL(/\/login\?next=%2Finvite%2F/)
+  await page.getByLabel("Email").fill(EMAIL)
+  await page.getByLabel("Password").fill(PASSWORD)
+  await page.getByRole("button", { name: "Sign in" }).click()
+  await page.waitForURL(/\/invite\//)
+  await expect(page.getByText(/different email/i)).toBeVisible()
 })
 
 test("second user opens the link, signs up, and joins; realtime works across browsers", async ({ browser }) => {

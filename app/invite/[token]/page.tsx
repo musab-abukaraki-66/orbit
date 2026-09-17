@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { Mail, ShieldAlert, Users } from "lucide-react"
 
+import { switchAccount } from "@/lib/auth/actions"
 import { getCurrentUser } from "@/lib/auth/session"
 import { createClient } from "@/lib/supabase/server"
 import { AcceptInvitationButton } from "@/components/members/accept-invitation-button"
@@ -49,7 +50,10 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
   if (!invite.email_matches) {
     return (
       <Shell icon={Mail} title="This invitation is for a different email" description={`It was sent to ${invite.email_masked}, but you're signed in as ${user.email}. Sign in with the invited address, or ask for a new invitation to this one.`}>
-        <Button variant="outline" render={<Link href={`/login?next=${encodeURIComponent(inviteUrl)}`} />}>Switch account</Button>
+        <form action={switchAccount}>
+          <input type="hidden" name="next" value={inviteUrl} />
+          <Button type="submit" variant="outline">Switch account</Button>
+        </form>
       </Shell>
     )
   }
