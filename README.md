@@ -50,7 +50,7 @@ Orbit never depends on email: every invitation is a link you can copy. With a fr
 
 1. Resend → API Keys → create a key → put it in `RESEND_API_KEY` locally and on Vercel.
 2. Free tier without a verified domain only delivers to the Resend account's own email address, from `onboarding@resend.dev`. Verify a domain in Resend (free) to email anyone, then set `RESEND_FROM_EMAIL` to an address on that domain.
-3. If delivery fails, the UI says why and still shows the link.
+3. If delivery fails, the UI says why and still shows the link. Manual check of a real send: `INVITE_TO=you@example.com npx playwright test e2e/send-real-invite.spec.ts` (skipped when `INVITE_TO` is unset).
 4. Optional: route Supabase Auth's own emails (password reset, confirmation) through the same account — Supabase dashboard → Authentication → SMTP Settings → custom SMTP: host `smtp.resend.com`, port `465`, user `resend`, password = the API key, sender = your verified address.
 
 ## Scripts
