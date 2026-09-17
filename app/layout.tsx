@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     template: "%s · Orbit",
   },
   description:
-    "Orbit is a team project-management app. Plan work on Kanban boards, coordinate across workspaces, and ship faster together.",
+    "Free, collaborative project management for small teams: workspaces, projects, realtime boards, tasks with comments and activity, an inbox, and a Pulse page that shows who is working on what.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
