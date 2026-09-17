@@ -6,7 +6,7 @@ Built with Next.js 16 (App Router, Server Actions), React 19, Tailwind v4, shadc
 
 ## Features
 
-- **Auth** — email + password sign up / sign in / sign out, protected routes, friendly error states.
+- **Auth** — email + password sign up / sign in / sign out, forgot / reset password (Supabase Auth recovery links), protected routes, friendly error states.
 - **Onboarding** — name your workspace → default team, statuses and labels are created automatically → optional sample project → straight into the app with a short tour.
 - **Workspaces** — switcher, settings, members & roles (owner / admin / member), leave, transfer ownership, delete.
 - **Invitations without an email service** — admins create an invite and get a shareable link. The invitee opens it, signs up (or in) with the invited email, and joins automatically. Links expire after 14 days and can be revoked. If `RESEND_API_KEY` is set the link is also emailed.
@@ -53,6 +53,16 @@ Orbit never depends on email: every invitation is a link you can copy. With a fr
 3. If delivery fails, the UI says why and still shows the link. Manual check of a real send: `INVITE_TO=you@example.com npx playwright test e2e/send-real-invite.spec.ts` (skipped when `INVITE_TO` is unset).
 4. Optional: route Supabase Auth's own emails (password reset, confirmation) through the same account — Supabase dashboard → Authentication → SMTP Settings → custom SMTP: host `smtp.resend.com`, port `465`, user `resend`, password = the API key, sender = your verified address.
 
+### Password reset
+
+`/login` → **Forgot password?** → `/forgot-password` asks Supabase Auth to email a recovery link (`resetPasswordForEmail`); the answer is the same whether or not the address has an account. The link lands on `/auth/callback`, which turns it into a session and continues to `/update-password`, where a new password (≥ 6 characters, with a letter and a number) is saved with `updateUser`. Only a session created by a recovery link within the last hour can use that page; a normal sign-in is refused. Supabase Auth stays the only password store.
+
+Manual Supabase settings (dashboard → Authentication):
+
+1. **URL Configuration → Redirect URLs**: add `http://localhost:3000/**` and `https://<your-domain>/**`, otherwise Supabase ignores our `redirectTo` and sends the user to the Site URL instead.
+2. **Email Templates → Reset password** (recommended): the default template uses a PKCE code that only works in the browser that requested the reset. Point the link at `{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=recovery&next=/update-password` so it works from any browser or mail app.
+3. **SMTP**: Supabase's built-in mailer is fine to try things out (low rate limits, only reliably delivers to project members). For real users set custom SMTP as in step 4 above (Resend, free).
+
 ## Scripts
 
 | Command | What it does |
@@ -75,7 +85,8 @@ The e2e suite (`e2e/v2-journey.spec.ts`) covers sign-up, onboarding, projects, t
 ## Project layout
 
 ```
-app/(auth)        login, signup, onboarding
+app/(auth)        login, signup, forgot-password, update-password, onboarding
+app/auth/callback Supabase Auth email-link landing (recovery)
 app/invite        invitation landing + accept
 app/(app)/w/[slug] workspace: pulse, my-work, inbox, projects, items, search, ai, profile, settings/*
 components/       ui primitives, items (board/list/detail), projects, members, inbox, settings, realtime

@@ -5,10 +5,13 @@ import { redirect } from "next/navigation"
 
 import { sendWelcomeEmail } from "@/lib/resend/welcome"
 import { safeNext } from "@/lib/auth/next"
+import { isValidEmail, validateNewPassword } from "@/lib/auth/password"
+import { hasRecoverySession } from "@/lib/auth/recovery"
 import { getSiteOrigin } from "@/lib/site-url"
 import { createClient } from "@/lib/supabase/server"
 
 export type AuthFormState = { message: string } | undefined
+export type ResetRequestState = { ok: true } | { ok: false; message: string } | undefined
 
 function friendlyAuthError(message: string) {
   if (/fetch failed|network|ECONN/i.test(message)) {
@@ -90,4 +93,51 @@ export async function switchAccount(formData: FormData) {
   const supabase = await createClient()
   await supabase.auth.signOut()
   redirect(`/login${next ? `?next=${encodeURIComponent(next)}` : ""}`)
+}
+
+// Always answers the same way so the form can't be used to discover which
+// emails have accounts. Supabase Auth sends the recovery email through its
+// configured SMTP; the link lands on /auth/callback and then /update-password.
+export async function requestPasswordReset(
+  _prev: ResetRequestState,
+  formData: FormData,
+): Promise<ResetRequestState> {
+  const email = String(formData.get("email") ?? "").trim()
+  if (!isValidEmail(email)) return { ok: false, message: "Please enter a valid email address." }
+
+  const supabase = await createClient()
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${getSiteOrigin()}/auth/callback?next=${encodeURIComponent("/update-password")}`,
+  })
+  if (error) {
+    // Logged for the operator, never surfaced: the response must not reveal
+    // whether the address exists or whether mail went out.
+    console.error(`[auth] resetPasswordForEmail failed: ${error.message}`)
+  }
+  return { ok: true }
+}
+
+// Only valid inside a session created by a recovery link. The password never
+// leaves this request: Supabase Auth hashes and stores it.
+export async function updatePassword(_prev: AuthFormState, formData: FormData): Promise<AuthFormState> {
+  const password = String(formData.get("password") ?? "")
+  const confirm = String(formData.get("confirm") ?? "")
+
+  const problem = validateNewPassword(password, confirm)
+  if (problem) return { message: problem }
+
+  if (!(await hasRecoverySession())) {
+    return { message: "This reset link is no longer valid. Request a new one and try again." }
+  }
+
+  const supabase = await createClient()
+  const { error } = await supabase.auth.updateUser({ password })
+  if (error) {
+    if (/different from the old password/i.test(error.message)) {
+      return { message: "Choose a password you haven't used before." }
+    }
+    return { message: friendlyAuthError(error.message) }
+  }
+
+  redirect("/app")
 }
