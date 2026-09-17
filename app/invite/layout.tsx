@@ -14,9 +14,7 @@ export default function InviteLayout({ children }: { children: ReactNode }) {
         </Link>
         <ThemeToggle />
       </header>
-      <main className="flex flex-1 items-center justify-center px-4 pb-16 sm:px-6">
-        {children}
-      </main>
+      <main className="flex flex-1 items-center justify-center px-4 pb-16 sm:px-6">{children}</main>
     </div>
   )
 }

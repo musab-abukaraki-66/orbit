@@ -4,77 +4,60 @@ import { after } from "next/server"
 import { redirect } from "next/navigation"
 
 import { sendWelcomeEmail } from "@/lib/resend/welcome"
+import { safeNext } from "@/lib/auth/next"
+import { isValidEmail, validateNewPassword } from "@/lib/auth/password"
+import { hasRecoverySession } from "@/lib/auth/recovery"
+import { getSiteOrigin } from "@/lib/site-url"
 import { createClient } from "@/lib/supabase/server"
 
-export type AuthFormState =
-  | {
-      message: string
-    }
-  | undefined
+export type AuthFormState = { message: string } | undefined
+export type ResetRequestState = { ok: true } | { ok: false; message: string } | undefined
 
-function getRedirectOrigin() {
-  if (process.env.NEXT_PUBLIC_SITE_URL) {
-    return process.env.NEXT_PUBLIC_SITE_URL
+function friendlyAuthError(message: string) {
+  if (/fetch failed|network|ECONN/i.test(message)) {
+    return "We couldn't reach the server. Check your connection and try again."
   }
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`
+  if (/already registered|already exists/i.test(message)) {
+    return "An account with that email already exists. Try signing in instead."
   }
-  return "http://127.0.0.1:3000"
+  if (/password/i.test(message) && /short|least/i.test(message)) {
+    return "Your password must be at least 6 characters long."
+  }
+  if (/rate limit/i.test(message)) {
+    return "Too many attempts. Please wait a moment and try again."
+  }
+  return message
 }
 
-// Only ever redirect to a same-origin path so a crafted `next` can't be used
-// as an open redirect.
-function safeNext(raw: FormDataEntryValue | null): string | null {
-  const value = String(raw ?? "").trim()
-  if (!value.startsWith("/")) return null
-  if (value.startsWith("//")) return null
-  return value
-}
-
-export async function signin(
-  _prevState: AuthFormState,
-  formData: FormData,
-): Promise<AuthFormState> {
+export async function signin(_prev: AuthFormState, formData: FormData): Promise<AuthFormState> {
   const email = String(formData.get("email") ?? "").trim()
   const password = String(formData.get("password") ?? "")
   const next = safeNext(formData.get("next"))
 
-  if (!email || !password) {
-    return { message: "Please enter your email and password." }
-  }
+  if (!email || !password) return { message: "Please enter your email and password." }
 
   const supabase = await createClient()
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  })
-
+  const { error } = await supabase.auth.signInWithPassword({ email, password })
   if (error) {
-    return {
-      message: "Invalid email or password. Please try again.",
+    if (/invalid login credentials/i.test(error.message)) {
+      return { message: "Invalid email or password. Please try again." }
     }
+    return { message: friendlyAuthError(error.message) }
   }
 
   redirect(next ?? "/app")
 }
 
-export async function signup(
-  _prevState: AuthFormState,
-  formData: FormData,
-): Promise<AuthFormState> {
+export async function signup(_prev: AuthFormState, formData: FormData): Promise<AuthFormState> {
   const email = String(formData.get("email") ?? "").trim()
   const password = String(formData.get("password") ?? "")
   const fullName = String(formData.get("fullName") ?? "").trim()
   const next = safeNext(formData.get("next"))
 
-  if (!email || !fullName) {
-    return { message: "Please enter your name and email." }
-  }
-  if (password.length < 6) {
-    return {
-      message: "Your password must be at least 6 characters long.",
-    }
-  }
+  if (!email || !fullName) return { message: "Please enter your name and email." }
+  if (!isValidEmail(email)) return { message: "Please enter a valid email address." }
+  const problem = validateNewPassword(password)
+  if (problem) return { message: problem }
 
   const supabase = await createClient()
   const { data, error } = await supabase.auth.signUp({
@@ -82,15 +65,11 @@ export async function signup(
     password,
     options: {
       data: { full_name: fullName },
-      emailRedirectTo: `${getRedirectOrigin()}/login`,
+      emailRedirectTo: `${getSiteOrigin()}/login${next ? `?next=${encodeURIComponent(next)}` : ""}`,
     },
   })
 
-  if (error) {
-    return {
-      message: error.message,
-    }
-  }
+  if (error) return { message: friendlyAuthError(error.message) }
 
   if (data.session && data.user) {
     const userEmail = data.user.email ?? email
@@ -100,10 +79,7 @@ export async function signup(
     redirect(next ?? "/app")
   }
 
-  return {
-    message:
-      "Check your email to confirm your account before signing in.",
-  }
+  return { message: "Check your email to confirm your account before signing in." }
 }
 
 export async function signout() {
@@ -112,59 +88,58 @@ export async function signout() {
   redirect("/login")
 }
 
-function slugify(value: string) {
-  const base = value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 60)
-
-  return base || "team"
+// Sign out and come back to a specific page (e.g. an invitation link) so the
+// person can sign in with a different account. Only same-site paths.
+export async function switchAccount(formData: FormData) {
+  const next = safeNext(String(formData.get("next") ?? ""))
+  const supabase = await createClient()
+  await supabase.auth.signOut()
+  redirect(`/login${next ? `?next=${encodeURIComponent(next)}` : ""}`)
 }
 
-export async function createTeam(
-  _prevState: AuthFormState,
+// Always answers the same way so the form can't be used to discover which
+// emails have accounts. Supabase Auth sends the recovery email through its
+// configured SMTP; the link lands on /auth/callback and then /update-password.
+export async function requestPasswordReset(
+  _prev: ResetRequestState,
   formData: FormData,
-): Promise<AuthFormState> {
-  const name = String(formData.get("name") ?? "").trim()
+): Promise<ResetRequestState> {
+  const email = String(formData.get("email") ?? "").trim()
+  if (!isValidEmail(email)) return { ok: false, message: "Please enter a valid email address." }
 
-  if (!name) {
-    return { message: "Please give your team a name." }
+  const supabase = await createClient()
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${getSiteOrigin()}/auth/callback?next=${encodeURIComponent("/update-password")}`,
+  })
+  if (error) {
+    // Logged for the operator, never surfaced: the response must not reveal
+    // whether the address exists or whether mail went out.
+    console.error(`[auth] resetPasswordForEmail failed: ${error.message}`)
+  }
+  return { ok: true }
+}
+
+// Only valid inside a session created by a recovery link. The password never
+// leaves this request: Supabase Auth hashes and stores it.
+export async function updatePassword(_prev: AuthFormState, formData: FormData): Promise<AuthFormState> {
+  const password = String(formData.get("password") ?? "")
+  const confirm = String(formData.get("confirm") ?? "")
+
+  const problem = validateNewPassword(password, confirm)
+  if (problem) return { message: problem }
+
+  if (!(await hasRecoverySession())) {
+    return { message: "This reset link is no longer valid. Request a new one and try again." }
   }
 
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect("/login")
-  }
-
-  const baseSlug = slugify(name)
-
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    const suffix =
-      attempt === 0 ? "" : `-${Math.random().toString(36).slice(2, 6)}`
-    const { error } = await supabase.from("teams").insert({
-      name,
-      slug: `${baseSlug}${suffix}`,
-      created_by: user.id,
-    })
-
-    if (!error) {
-      redirect("/app")
+  const { error } = await supabase.auth.updateUser({ password })
+  if (error) {
+    if (/different from the old password/i.test(error.message)) {
+      return { message: "Choose a password you haven't used before." }
     }
-
-    const isUniqueViolation = error.code === "23505"
-    if (!isUniqueViolation) {
-      return { message: error.message }
-    }
+    return { message: friendlyAuthError(error.message) }
   }
 
-  return {
-    message: "Could not create your team. Please try again.",
-  }
+  redirect("/app")
 }
-

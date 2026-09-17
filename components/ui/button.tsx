@@ -1,3 +1,4 @@
+import * as React from "react"
 import { Button as ButtonPrimitive } from "@base-ui/react/button"
 import { cva, type VariantProps } from "class-variance-authority"
 
@@ -44,11 +45,20 @@ function Button({
   className,
   variant = "default",
   size = "default",
+  nativeButton,
   ...props
 }: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+  // When rendering as something else (e.g. a Link), tell Base UI so it stops
+  // warning about a missing native <button>. Anchors keep their link role.
+  const renderedAsOther = React.isValidElement(props.render) && props.render.type !== "button"
+  const rendersNativeButton = nativeButton ?? !renderedAsOther
+  const isAnchor =
+    renderedAsOther && "href" in ((props.render as React.ReactElement<{ href?: unknown }>).props ?? {})
   return (
     <ButtonPrimitive
       data-slot="button"
+      nativeButton={rendersNativeButton}
+      {...(isAnchor ? { role: "link" } : {})}
       className={cn(buttonVariants({ variant, size, className }))}
       {...props}
     />

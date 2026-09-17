@@ -1,37 +1,29 @@
 import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 
-import { getFirstTeam, requireUser } from "@/lib/auth/session"
+import { firstNameOf, requireUser } from "@/lib/auth/session"
+import { getUserWorkspaces } from "@/lib/workspaces/context"
 import { OnboardingForm } from "./onboarding-form"
 
-export const metadata: Metadata = {
-  title: "Create your team",
-}
+export const metadata: Metadata = { title: "Create your workspace" }
 
-export default async function OnboardingPage() {
+export default async function OnboardingPage({ searchParams }: { searchParams: Promise<{ new?: string }> }) {
   const user = await requireUser()
-
-  const team = await getFirstTeam(user.id)
-  if (team) {
-    redirect("/app")
-  }
-
-  const firstName = String(user.user_metadata?.full_name ?? user.email ?? "")
-    .split(/\s+/)[0]
-    .trim()
+  const { new: isNew } = await searchParams
+  const workspaces = await getUserWorkspaces()
+  if (workspaces.length > 0 && isNew !== "1") redirect(`/w/${workspaces[0].slug}`)
 
   return (
-    <div className="w-full max-w-md flex flex-col gap-6">
+    <div className="flex w-full max-w-md flex-col gap-6">
       <div className="flex flex-col gap-1.5">
         <h1 className="text-2xl font-semibold tracking-tight">
-          Create your team{firstName ? `, ${firstName}` : ""}
+          {workspaces.length > 0 ? "Create another workspace" : `Welcome, ${firstNameOf(user)}. Let's set up your workspace.`}
         </h1>
         <p className="text-sm text-muted-foreground">
-          Teams are where Orbit work lives. You can invite teammates after
-          you&apos;re set up.
+          A workspace is your team&apos;s home — projects, tasks and people live inside it. Name it after your company or team.
         </p>
       </div>
-      <OnboardingForm />
+      <OnboardingForm hasWorkspaces={workspaces.length > 0} backHref={workspaces[0] ? `/w/${workspaces[0].slug}` : null} />
     </div>
   )
 }

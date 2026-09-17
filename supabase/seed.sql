@@ -1,2 +1,3 @@
--- Orbit — local seed data (M2: none required yet).
--- M3+ will seed demo teams/workspaces as onboarding is implemented.
+-- Orbit local seed (supabase/config.toml -> [db.seed]). Intentionally empty:
+-- the app creates its own sample data through public.seed_sample_project()
+-- when a workspace is created with "Add a sample project" checked.

@@ -3,7 +3,7 @@ import { ImageResponse } from "next/og"
 import { BrandMarkVisual } from "@/components/brand-mark-visual"
 
 export const alt =
-  "Orbit — Plan, track, and ship together, in perfect orbit."
+  "Orbit — See who is working on what, without asking. Free, collaborative project management for small teams."
 export const size = { width: 1200, height: 630 }
 export const contentType = "image/png"
 
@@ -54,7 +54,7 @@ export default function OpenGraphImage() {
               textTransform: "uppercase",
             }}
           >
-            Orbit · project management for teams
+            Orbit · free project management for small teams
           </div>
           <div
             style={{
@@ -66,13 +66,13 @@ export default function OpenGraphImage() {
               lineHeight: 1.05,
             }}
           >
-            <span>Plan, track, and ship</span>
-            <span>together.</span>
+            <span>See who is working on what,</span>
+            <span>without asking.</span>
           </div>
           <div
             style={{ fontSize: 28, color: "#a2a1ac", lineHeight: 1.35 }}
           >
-            Everything your team needs, in perfect orbit.
+            Workspaces, projects, realtime boards, inbox and Pulse.
           </div>
         </div>
       </div>
