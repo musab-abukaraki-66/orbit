@@ -63,10 +63,20 @@ export function ItemDetail(props: ItemDetailProps) {
   async function save(patch: Parameters<typeof updateItem>[2]) {
     setSaving(true)
     setError(null)
-    const result = await updateItem(item.id, slug, patch)
-    setSaving(false)
-    if (!result.ok) setError(result.message)
-    else router.refresh()
+    try {
+      const result = await updateItem(item.id, slug, patch)
+      if (!result.ok) {
+        setError(result.message)
+        setTitle(item.title)
+      } else {
+        router.refresh()
+      }
+    } catch {
+      setError("Could not save — check your connection and try again.")
+      setTitle(item.title)
+    } finally {
+      setSaving(false)
+    }
   }
 
   const itemPath = `/w/${slug}/items/${item.key}`

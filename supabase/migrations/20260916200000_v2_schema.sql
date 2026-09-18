@@ -426,6 +426,23 @@ end $$;
 create trigger workspace_memberships_guard before update or delete on public.workspace_memberships
   for each row execute function private.membership_guard();
 
+-- Removing a workspace member must not leave their tasks pointing at a
+-- non-member forever: work_items.assignee_id has no FK cascade to
+-- workspace_memberships (it references profiles, which persist), so a
+-- membership delete needs its own cleanup. Preserves the work item and
+-- every other field; only assignee_id is cleared, only for that member,
+-- only in that workspace.
+create or replace function private.membership_after_delete() returns trigger
+language plpgsql security definer set search_path = '' as $$
+begin
+  update public.work_items
+  set assignee_id = null
+  where workspace_id = old.workspace_id and assignee_id = old.user_id;
+  return old;
+end $$;
+create trigger workspace_memberships_after_delete after delete on public.workspace_memberships
+  for each row execute function private.membership_after_delete();
+
 -- projects: defaults + lead membership
 create or replace function private.project_before_insert() returns trigger
 language plpgsql security definer set search_path = '' as $$
