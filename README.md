@@ -15,7 +15,7 @@
 <br />
 
 <p align="center">
-  <img src="docs/assets/hero.png" alt="Orbit's Pulse view: a workspace-wide feed of who is working on what, overdue work, and recent activity" width="100%" />
+  <img src="docs/assets/landing-page.png" alt="Orbit landing page: hero, feature highlights and pricing" width="100%" />
 </p>
 
 <br />
@@ -45,10 +45,6 @@ Workspace
 
 Yes. The [live demo](https://orbit-ten-cyan.vercel.app) is the real, deployed app — sign up, create a workspace, and you get a short sample project to click around in. No credit card, no email service required to invite a teammate (see [Live Demo](#live-demo) below for exactly how that works).
 
-<p align="center">
-  <img src="docs/assets/landing-page.png" alt="Orbit landing page: hero, feature highlights and pricing" width="100%" />
-</p>
-
 <br />
 
 ## Product tour
@@ -59,44 +55,29 @@ A guided walk through the actual product, screen by screen.
 
 The answer to "what's going on?" without asking anyone: overdue work, recent activity, and who's carrying what across the whole workspace.
 
-<p align="center"><img src="docs/assets/pulse.png" alt="Pulse: workspace-wide activity and workload feed" width="100%" /></p>
-
 ### Projects and the Kanban board
 
 A project is a body of work with a lead, a status, a health signal (on track / at risk / off track) and a target date. Board, list, overview and updates are different views over the same underlying work items. Drag a card between columns and it moves for everyone watching, immediately — columns are your workspace's statuses, editable in Settings.
-
-<p align="center"><img src="docs/assets/projects.png" alt="Projects list with lead, status and health" width="100%" /></p>
-<p align="center"><img src="docs/assets/project-board.png" alt="Kanban board with drag and drop" width="100%" /></p>
 
 ### Work items, comments and activity
 
 Title, description, status, priority, assignee (must be a workspace member — enforced in Postgres, not just the UI), due date, labels. Deep-linkable with `?item=KEY` so a card can be shared directly. `@mention` a teammate in a comment to notify them; every status change, reassignment, priority change and edit is written to an append-only activity log attached to the item, so context never has to be reconstructed from memory.
 
-<p align="center"><img src="docs/assets/work-item.png" alt="Work item detail with comments and activity timeline" width="100%" /></p>
-
 ### My Work
 
 The same work-item model, filtered to what's assigned to you — the personal lens on top of the shared board.
-
-<p align="center"><img src="docs/assets/my-work.png" alt="My Work: a personal view of assigned tasks" width="100%" /></p>
 
 ### Inbox
 
 Notifications for assignments, `@mentions`, comments, status changes, invitations and new members, fanned out automatically from the activity log.
 
-<p align="center"><img src="docs/assets/inbox.png" alt="Inbox with notifications for assignments, mentions and comments" width="100%" /></p>
-
 ### Members and invitations
 
 An admin creates an invite and gets a shareable link immediately; no email service required. The invitee opens it, signs up (or in) with the invited email, and joins automatically. If `RESEND_API_KEY` is configured, the same link is also emailed.
 
-<p align="center"><img src="docs/assets/members.png" alt="Workspace members and pending invitations" width="100%" /></p>
-
 ### Settings
 
 Workspace name and slug, members and roles, statuses, labels, notification preferences — the structural knobs an admin needs, scoped to what their role is actually allowed to touch.
-
-<p align="center"><img src="docs/assets/settings.png" alt="Workspace settings" width="100%" /></p>
 
 ### Realtime
 

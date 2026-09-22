@@ -26,7 +26,7 @@ Three real problems found and fixed during development, in the order they happen
 
 **Result.** Label edits now propagate correctly, and a card's labels survive unrelated updates from other users.
 
-## Removing a member could leave a work item pointing at nobody meaningful — and a failed save could strand the UI
+## Membership removal and dangling assignments
 
 **Commit:** [`c281556`](https://github.com/musab-abukaraki-66/orbit/commit/c28155690ced2abbbe9fbab6ad4b90421aabb95d) — *fix: clear assignee on removed-member work items; harden item-detail save error handling*
 
